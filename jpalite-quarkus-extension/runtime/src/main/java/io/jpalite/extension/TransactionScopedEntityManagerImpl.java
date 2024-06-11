@@ -378,10 +378,10 @@ public class TransactionScopedEntityManagerImpl implements JPALiteEntityManager
 	}
 
 	@Override
-	public Query createQuery(String qlString)
+	public Query createQuery(String sqlString)
 	{
 		try (EntityManagerSession session = getEntityManager()) {
-			return session.getEntityManager().createQuery(qlString);
+			return session.getEntityManager().createQuery(sqlString);
 		}
 	}
 
