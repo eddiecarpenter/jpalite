@@ -1,0 +1,21 @@
+{
+  "bundles": [
+    {
+      "name": "com.sun.rowset.RowSetResourceBundle"
+    }
+  ],
+  "resources": {
+    "includes": [
+      {
+        "pattern": ".*/rowset.properties$"
+      },
+      {
+        "pattern": "META-INF/services/*$"
+      },
+      {
+        "pattern": ".*\\.PersistenceProvider"
+      }
+    ],
+    "excludes": []
+  }
+}

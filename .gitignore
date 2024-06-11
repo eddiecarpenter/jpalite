@@ -1,0 +1,13 @@
+.settings
+.project
+.classpath
+.metadata
+*.stale
+
+# ItelliJ
+.idea/
+*.iml
+
+# Silly Mac OSX stuff
+.DS_Store
+**/target/
