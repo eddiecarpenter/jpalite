@@ -207,10 +207,10 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 						}//if
 						else {
 							Object val = _getField(field.getName());
-							if (val instanceof Map mapVal) {
+							if (val instanceof Map<?, ?> mapVal) {
 								val = "[Map " + mapVal.size() + "  items]";
 							}//if
-							else if (val instanceof List listVal) {
+							else if (val instanceof List<?> listVal) {
 								val = "[List " + listVal.size() + " items]";
 							}//else if
 							toString.append(val);
@@ -988,9 +988,9 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		 */
 		_getMetaData().getEntityFields().stream()
 				.filter(f -> f.getFieldType() == FieldType.TYPE_CUSTOMTYPE &&
-						f.getConverterClass().prototypeLib() != null &&
-						!f.getConverterClass().prototypeLib().isBlank() &&
-						!serCtx.canMarshall(f.getConverterClass().prototypeLib()))
+							 f.getConverterClass().prototypeLib() != null &&
+							 !f.getConverterClass().prototypeLib().isBlank() &&
+							 !serCtx.canMarshall(f.getConverterClass().prototypeLib()))
 				.forEach(f -> {
 					f.getConverterClass().getSchema().registerSchema(serCtx);
 					f.getConverterClass().getSchema().registerMarshallers(serCtx);

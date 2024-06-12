@@ -16,17 +16,10 @@
  */
 package io.jpalite.jqpl;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.Data;
 import io.jpalite.impl.JPAEntityImpl;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
@@ -35,7 +28,8 @@ import java.math.BigDecimal;
  */
 @Entity
 @Table(name = "EMPLOYEE")
-@Data
+@Getter
+@Setter
 public class Employee1 extends JPAEntityImpl
 {
 

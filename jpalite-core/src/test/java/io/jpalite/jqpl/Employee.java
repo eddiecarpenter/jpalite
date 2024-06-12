@@ -18,7 +18,8 @@ package io.jpalite.jqpl;
 
 import io.jpalite.impl.JPAEntityImpl;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,7 +29,8 @@ import java.util.List;
  */
 @Entity
 @Table(name = "EMPLOYEE")
-@Data
+@Getter
+@Setter
 public class Employee extends JPAEntityImpl
 {
 

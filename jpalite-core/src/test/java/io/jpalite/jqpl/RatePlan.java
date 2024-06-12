@@ -17,18 +17,15 @@
 
 package io.jpalite.jqpl;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
-import lombok.Data;
 import io.jpalite.impl.JPAEntityImpl;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.sql.Timestamp;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "RATE_PLAN")
 public class RatePlan extends JPAEntityImpl
