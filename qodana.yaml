@@ -31,3 +31,22 @@ projectJDK: 21 #(Applied in CI/CD pipeline)
 linter: jetbrains/qodana-jvm:latest
 exclude:
   - name: AutoCloseableResource
+
+licenseRules:
+  - keys:
+      - "PROPRIETARY-LICENSE"
+      - "MIT"
+    prohibited:
+      - "BSD-3-CLAUSE-NO-CHANGE"
+    allowed:
+      - "ISC"
+
+  - keys: ["Apache-2.0"]
+    allowed:
+      - "MIT"
+      - "None"
+      - "BSD-3-CLAUSE-NO-TRADEMARK"
+      - "EPL-2.0"
+      - "GPL-2.0-only"
+      - "LGPL-2.1-only"
+      - "LGPL-2.0-or-later"
