@@ -62,8 +62,8 @@ public class EntityL1LocalCacheImpl implements EntityLocalCache
 	{
 		if (persistenceContext.isActive() && primaryKey != null) {
 			JPAEntity entity = cache.stream()
-					.filter(e -> e._getMetaData().getName().equals(entityType.getName()))
-					.filter(e -> primaryKey.equals(e._getField(e._getMetaData().getIdField().getName())))
+					.filter(e -> e.get$$EntityClass().equals(entityType))
+					.filter(e -> primaryKey.equals(e._getPrimaryKey()))
 					.findFirst()
 					.orElse(null);
 			if (entity != null) {
@@ -87,7 +87,7 @@ public class EntityL1LocalCacheImpl implements EntityLocalCache
 	{
 		if (persistenceContext.isActive()) {
 			cache.stream()
-					.filter(e -> e._getMetaData().getName().equals(entityType.getName()))
+					.filter(e -> e.get$$EntityClass().equals(entityType))
 					.forEach(e -> action.accept((T) e));
 		}//if
 	}//foreachType

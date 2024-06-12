@@ -692,7 +692,6 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 			return null;
 		}//if
 
-
 		if ($$metadata.getIdFields().size() > 1) {
 			EntityMetaData<?> primaryKey = $$metadata.getIPrimaryKeyMetaData();
 			Object primKey = null;

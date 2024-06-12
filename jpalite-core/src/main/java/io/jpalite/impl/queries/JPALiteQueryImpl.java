@@ -556,14 +556,22 @@ public class JPALiteQueryImpl<T> implements Query
 					}//if
 
 					if (result instanceof JPAEntity jpaEntity) {
-						if (jpaEntity._getMetaData().isCacheable() && !bypassL2Cache) {
-							persistenceContext.l2Cache().add(jpaEntity);
-						}//if
+						//Check if the entity is not already in L1 Cache
+						T l1Entity = (T) persistenceContext.l1Cache().find(jpaEntity.get$$EntityClass(), jpaEntity._getPrimaryKey());
+						if (l1Entity != null) {
+							persistenceContext.l1Cache().detach(jpaEntity);
+							result = l1Entity;
+						}
+						else {
+							if (jpaEntity._getMetaData().isCacheable() && !bypassL2Cache) {
+								persistenceContext.l2Cache().add(jpaEntity);
+							}//if
 
-						if (isPessimisticLocking(lockMode)) {
-							jpaEntity._setLockMode(lockMode);
-						}//if
-					}
+							if (isPessimisticLocking(lockMode)) {
+								jpaEntity._setLockMode(lockMode);
+							}//if
+						}//else
+					}//if
 
 					span.setAttribute("result", "Result found");
 					return result;
