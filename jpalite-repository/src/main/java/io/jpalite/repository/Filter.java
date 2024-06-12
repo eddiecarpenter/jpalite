@@ -25,15 +25,15 @@ public class Filter
 	public static final String AND = " AND ";
 	public static final String OR = " OR ";
 
-	private List<Filter> filters;
+	private final List<Filter> filters;
 	private FilterExpression filterExpressions;
 	private String condOper;
 
-	public class FilterExpression
+	public static class FilterExpression
 	{
-		private String field;
-		private Operators operator;
-		private Object[] parameter;
+		private final String field;
+		private final Operators operator;
+		private final Object[] parameter;
 
 		public FilterExpression(String field, Operators operator, Object... parameters)
 		{
@@ -68,7 +68,7 @@ public class Filter
 						if (paramNr > 1) {
 							expr.append(",");
 						}//if
-						expr.append(":" + paramName + paramNr);
+						expr.append(":").append(paramName).append(paramNr);
 						paramNr++;
 					}//for
 					expr.append(")");
@@ -82,7 +82,7 @@ public class Filter
 					int paramNr = 1;
 					for (Object param : parameter) {
 						params.put(paramName + paramNr, operator.getPrefix() + param + operator.getPostfix());
-						expr.append(" :" + paramName + paramNr);
+						expr.append(" :").append(paramName).append(paramNr);
 						paramNr++;
 					}//for
 					yield expr.toString();
@@ -98,7 +98,7 @@ public class Filter
 						if (paramNr > 1) {
 							expr.append(",");
 						}//if
-						expr.append(" :" + paramName + paramNr);
+						expr.append(" :").append(paramName).append(paramNr);
 						paramNr++;
 					}//for
 					yield expr.toString();

@@ -133,10 +133,6 @@ public class EntityMetaDataManager
 
 	public static void register(@Nonnull EntityMetaData<?> metaData)
 	{
-		if (metaData == null) {
-			throw new IllegalArgumentException("EntityMetaData cannot be null");
-		}//if
-
 		if (REGISTRY_ENTITY_NAMES.containsKey(metaData.getName())) {
 			throw new IllegalArgumentException("EntityMetaData already registered for " + metaData.getName());
 		}//if

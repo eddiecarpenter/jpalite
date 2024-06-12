@@ -87,22 +87,6 @@ public class PreparedStatementWrapper extends StatementWrapper implements Prepar
 	protected void logExecution(String method, String queryStr, long executeTime, boolean update)
 	{
 		if (connection.isEnableLogging() || connection.getAuditWriter() != null) {
-			StringBuilder paramsStr = new StringBuilder();
-			if (params.isEmpty()) {
-				paramsStr.append(",");
-			}//if
-			else {
-				for (Iterator<Integer> iterator = params.keySet().iterator(); iterator.hasNext(); ) {
-					Integer key = iterator.next();
-					Object value = params.get(key);
-					if (value == null) {
-						value = NULL_STR;
-					}//if
-
-					paramsStr.append(",:").append(key).append("=").append(value);
-				}
-			}//else
-
 			super.logExecution(method, queryStr + " - (" + buildParamList() + ")", executeTime, update);
 		}//if
 	}

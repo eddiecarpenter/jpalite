@@ -263,8 +263,12 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 				method.getParameters()
 						.stream()
 						.filter(p -> p.asType().toString().equals(Pageable.class.getName()))
-						.forEach(p -> pageAndSort.append("query.setFirstResult(" + p.getSimpleName() + ".getPageIndex())\n")
-								.append(".setMaxResults(" + p.getSimpleName() + ".getPageSize());\n"));
+						.forEach(p -> pageAndSort.append("query.setFirstResult(")
+								.append(p.getSimpleName())
+								.append(".getPageIndex())\n")
+								.append(".setMaxResults(")
+								.append(p.getSimpleName())
+								.append(".getPageSize());\n"));
 			}//if
 			else {
 				out.println("String queryStr = \"" + query.value() + "\";");
@@ -277,8 +281,12 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 							.filter(p -> p.asType().toString().equals(Pageable.class.getName()))
 							.forEach(p ->
 									 {
-										 pageAndSort.append("query.setFirstResult(" + p.getSimpleName() + ".getPageIndex())\n")
-												 .append(".setMaxResults(" + p.getSimpleName() + ".getPageSize());\n");
+										 pageAndSort.append("query.setFirstResult(")
+												 .append(p.getSimpleName())
+												 .append(".getPageIndex())\n")
+												 .append(".setMaxResults(")
+												 .append(p.getSimpleName())
+												 .append(".getPageSize());\n");
 										 out.println("queryStr += " + p.getSimpleName() + ".getSort().getOrderBy();");
 									 });
 					method.getParameters()

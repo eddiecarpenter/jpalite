@@ -29,11 +29,11 @@ import java.util.List;
 @SuppressWarnings("java:S3011")//Changing accessibility mode is needed
 public class EntityLifecycleImpl implements EntityLifecycle
 {
-	private List<Methods> listeners;
+	private final List<Methods> listeners;
 
-	private class Methods
+	private static class Methods
 	{
-		private Class<?> listenerClass;
+		private final Class<?> listenerClass;
 		private Method postLoad;
 		private Method prePersist;
 		private Method postPersist;

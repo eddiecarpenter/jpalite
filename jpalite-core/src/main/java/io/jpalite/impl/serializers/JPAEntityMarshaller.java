@@ -134,10 +134,6 @@ public class JPAEntityMarshaller<T> extends GeneratedMarshallerBase implements P
 				}//if
 				else {
 					EntityMetaData<?> subMetaData = EntityMetaDataManager.getMetaData(field.getType());
-					if (subMetaData == null) {
-						throw new IOException(field.getType() + " is not an entity");
-					}//if
-
 					Object primaryKey;
 					//If we have multiple keys then that primary key will be stored in an embedded object
 					if (metaData.hasMultipleIdFields()) {

@@ -97,7 +97,7 @@ public class JPALiteMojo extends AbstractMojo
 		return vClassList;
 	}
 
-	@SuppressWarnings("java:S2112") //We need URLs here
+	@SuppressWarnings({"java:S2112", "UrlHashCode"}) //We need URLs here
 	public void execute() throws MojoExecutionException
 	{
 		if (skip) {

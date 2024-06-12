@@ -30,8 +30,7 @@ public class NamedQueryImpl<T> extends TypedQueryImpl<T>
 {
 	public static final @Nonnull Map<String, Object> buildHints(Map<String, Object> hints, QueryHint[] namedHints)
 	{
-		Map<String, Object> newHints = new HashMap<>();
-		newHints.putAll(hints);
+		Map<String, Object> newHints = new HashMap<>(hints);
 		for (QueryHint hint : namedHints) {
 			newHints.put(hint.name(), hint.value());
 		}//for

@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("SqlSourceToSinkFlow")
 public class TransactionScopedEntityManagerImpl implements JPALiteEntityManager
 {
 	private static final Logger LOG = LoggerFactory.getLogger(TransactionScopedEntityManagerImpl.class);

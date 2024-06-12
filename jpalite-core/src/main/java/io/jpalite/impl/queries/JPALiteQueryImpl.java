@@ -91,7 +91,7 @@ public class JPALiteQueryImpl<T> implements Query
 	/**
 	 * The lock mode of the returned item
 	 */
-	private LockModeType lockMode = LockModeType.NONE;
+	private LockModeType lockMode;
 	/**
 	 * The expected return type
 	 */

@@ -100,7 +100,7 @@ public class DatabasePoolImpl implements DatabasePool
 		}//if
 
 		Map<String, PersistenceContext> connectionList = connections.get();
-		PersistenceContext manager = null;
+		PersistenceContext manager;
 		if (connectionList == null || connectionList.get(persistenceUnit.getPersistenceUnitName()) == null) {
 			LOG.trace("Creating a new Persistence Context for thread {}", Thread.currentThread().getName());
 			manager = new PersistenceContextImpl(this, persistenceUnit);
