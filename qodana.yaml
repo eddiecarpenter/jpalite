@@ -44,7 +44,7 @@ licenseRules:
   - keys: ["Apache-2.0"]
     allowed:
       - "MIT"
-      - "None"
+      - "NONE"
       - "BSD-3-CLAUSE-NO-TRADEMARK"
       - "EPL-2.0"
       - "GPL-2.0-only"
