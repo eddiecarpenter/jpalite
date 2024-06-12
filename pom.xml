@@ -150,15 +150,15 @@
 
             <repositories>
                 <repository>
-                    <id>Nexus</id>
-                    <name>Nexus Group</name>
-                    <url>https://nexus.frei.dev/repository/maven-public/</url>
+                    <id>central</id>
+                    <name>Maven Central</name>
+                    <url>https://repo1.maven.org/maven2/</url>
                     <layout>default</layout>
                 </repository>
                 <repository>
-                    <id>TradeSwitch</id>
-                    <name>TradeSwitch Repo</name>
-                    <url>https://nexus.frei.dev/repository/tradeswitch.dev/</url>
+                    <id>devrepo</id>
+                    <name>Dev Repo</name>
+                    <url>http://localhost:8046/artifactory/devrepo/</url>
                     <layout>default</layout>
                 </repository>
             </repositories>
