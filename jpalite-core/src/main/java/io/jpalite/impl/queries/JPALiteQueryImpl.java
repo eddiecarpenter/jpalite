@@ -31,6 +31,7 @@ import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.InvocationTargetException;
@@ -41,6 +42,7 @@ import java.util.*;
 import static io.jpalite.JPALiteEntityManager.*;
 import static jakarta.persistence.LockModeType.*;
 
+@SuppressWarnings("DuplicatedCode")
 @Slf4j
 public class JPALiteQueryImpl<T> implements Query
 {
@@ -97,6 +99,7 @@ public class JPALiteQueryImpl<T> implements Query
 	 */
 	private final Class<?> resultClass;
 
+	@Getter
 	private String connectionName;
 	private int queryTimeout;
 	private int lockTimeout;
@@ -227,7 +230,6 @@ public class JPALiteQueryImpl<T> implements Query
 				case TYPE_DOUBLEDOUBLE -> resultSet.getDouble(columnNr);
 				case TYPE_STRING -> resultSet.getString(columnNr);
 				case TYPE_TIMESTAMP -> resultSet.getTimestamp(columnNr);
-				case TYPE_OBJECT -> resultSet.getObject(columnNr);
 				case TYPE_ENTITY -> persistenceContext.mapResultSet(entity, "c" + columnNr + "_", resultSet);
 				default -> resultSet.getObject(columnNr);
 			};
@@ -324,11 +326,6 @@ public class JPALiteQueryImpl<T> implements Query
 
 		return statement;
 	}//bindParameters
-
-	public String getConnectionName()
-	{
-		return connectionName;
-	}
 
 	private String getQuery()
 	{
@@ -654,7 +651,7 @@ public class JPALiteQueryImpl<T> implements Query
 	}
 
 	@Override
-	@SuppressWarnings({"java:S6205", "unchecked"}) // This improves the readability of the assignment
+	@SuppressWarnings({"java:S6205"}) // This improves the readability of the assignment
 	public Query setHint(String hintName, Object value)
 	{
 		hints.put(hintName, value);
@@ -732,9 +729,9 @@ public class JPALiteQueryImpl<T> implements Query
 	private void processQuery()
 	{
 		if (isPessimisticLocking(lockMode)) {
-			/**
-			 * It is illegal to do a "SELECT FOR UPDATE" query that contains joins.
-			 * We are forcing the parser to generate a query that do not have any joins.
+			/*
+			  It is illegal to do a "SELECT FOR UPDATE" query that contains joins.
+			  We are forcing the parser to generate a query that do not have any joins.
 			 */
 			hints.put(TRADESWITCH_OVERRIDE_FETCHTYPE, FetchType.LAZY);
 		}//if
@@ -749,11 +746,12 @@ public class JPALiteQueryImpl<T> implements Query
 				throw new IllegalArgumentException(MIXING_POSITIONAL_AND_NAMED_PARAMETERS_ARE_NOT_ALLOWED);
 			}//if
 
-			/**
-			 * Check that the correct parameters are have value.
-			 * Create a new list of parameters such that for every parameter used in the query
-			 * an entry exists. The problem here is that for named parameters the same name could
-			 * be used more than once in the query (which is okay)
+			/*
+			  Check that the correct parameters are have value.
+			  Create a new list of parameters such that for every parameter used in the query
+			  an entry exists.
+			  The problem here is that for named parameters the same name could
+			  be used more than once in the query (which is okay)
 			 */
 			List<QueryParameterImpl<?>> parameters = new ArrayList<>();
 			parser.getQueryParameters().forEach(templateParam -> {
@@ -775,12 +773,12 @@ public class JPALiteQueryImpl<T> implements Query
 
 			if (showSql) {
 				LOG.info("\n------------ Query Parser -------------\n" +
-								 "Query language: {}\n" +
-								 "----------- Raw ----------\n" +
-								 "{}\n" +
-								 "---------- Parsed --------\n" +
-								 "{}\n" +
-								 "--------------------------------------",
+						 "Query language: {}\n" +
+						 "----------- Raw ----------\n" +
+						 "{}\n" +
+						 "---------- Parsed --------\n" +
+						 "{}\n" +
+						 "--------------------------------------",
 						 queryLanguage, rawQuery, query);
 			}//if
 		}//try
