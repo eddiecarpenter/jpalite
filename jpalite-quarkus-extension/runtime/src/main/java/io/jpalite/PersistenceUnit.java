@@ -37,6 +37,7 @@ public @interface PersistenceUnit
 	String value() default "<default>";
 
 
+	@SuppressWarnings("ClassExplicitlyAnnotation")
 	class PersistenceUnitLiteral extends AnnotationLiteral<PersistenceUnit> implements PersistenceUnit
 	{
 

@@ -103,7 +103,7 @@ public class JPALiteQueryImpl<T> implements Query
 	private boolean bypassL2Cache;
 	private boolean cacheResultList;
 	private boolean showSql;
-	private Class<?>[] queryResultTypes = null;
+	private Class<?>[] queryResultTypes;
 	private FieldType fieldType;
 
 	/**
