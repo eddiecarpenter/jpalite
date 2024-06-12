@@ -48,5 +48,7 @@ licenseRules:
       - "BSD-3-CLAUSE-NO-TRADEMARK"
       - "EPL-2.0"
       - "GPL-2.0-only"
+      - "GPL-1.0-or-later"
       - "LGPL-2.1-only"
       - "LGPL-2.0-or-later"
+      - "MPL-1.1"

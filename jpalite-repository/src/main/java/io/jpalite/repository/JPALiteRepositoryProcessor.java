@@ -435,8 +435,8 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 			out.print(repoElement.getQualifiedName());
 
 			out.println(" {");
-			out.println("  @jakarta.Inject");
-			out.print("  @io.jpalite.PersistenceUnit(\"");
+			out.println("  @Inject");
+			out.print("  @PersistenceUnit(\"");
 			out.print(annotation.persistenceUnit());
 			out.println("\")");
 			out.println("  EntityManager em;");
@@ -446,7 +446,7 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 //			out.print("   return producer.getEntityManager(\"");
 //			out.print(annotation.persistenceUnit());
 //			out.println("\");");
-			out.print("   return em;");
+			out.println("   return em;");
 			out.println("}");
 
 			repoElement.getInterfaces()
