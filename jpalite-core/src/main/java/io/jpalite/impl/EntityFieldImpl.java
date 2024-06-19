@@ -63,9 +63,9 @@ public class EntityFieldImpl implements EntityField
 	 */
 	private Class<?> type;
 	/**
-	 * The type of field as per {@link FieldType}
+	 * Set to true if the field points to an entity
 	 */
-	private FieldType fieldType;
+	private boolean entityField;
 	/**
 	 * The SQL column linked to the field
 	 */
@@ -156,7 +156,7 @@ public class EntityFieldImpl implements EntityField
 		enityClass = enitityClass;
 		name = field.getName();
 		this.fieldNr = fieldNr;
-		fieldType = FieldType.fieldType(type);
+		entityField = (JPAEntity.class.isAssignableFrom(type));
 		mappingType = MappingType.BASIC;
 		unique = false;
 		nullable = true;
@@ -236,26 +236,11 @@ public class EntityFieldImpl implements EntityField
 	{
 		Basic basic = field.getAnnotation(Basic.class);
 		if (basic != null) {
-			if (getFieldType() == FieldType.TYPE_ENTITY) {
+			if (isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is referencing an Entity type and cannot be annotated with @Basic.");
 			}//if
 			setFetchType(basic.fetch());
 			setNullable(basic.optional());
-		}//if
-
-		Enumerated enumField = field.getAnnotation(Enumerated.class);
-		if (enumField != null || getType().isEnum()) {
-			if (enumField == null) {
-				LOG.warn("{}: Field '{}' is not annotated as an enum, assuming it to be one - Developers must fix this", enityClass.getName(), field.getName());
-				setFieldType(FieldType.TYPE_ENUM);
-			}//if
-			else {
-				if (getFieldType() == FieldType.TYPE_ENTITY) {
-					throw new PersistenceException(enityClass.getName() + "::" + getName() + " is referencing an Entity type and cannot be annotated with @Enumerated.");
-				}//if
-
-				setFieldType(enumField.value() == EnumType.ORDINAL ? FieldType.TYPE_ORDINAL_ENUM : FieldType.TYPE_ENUM);
-			}//if
 		}//if
 
 		Column col = field.getAnnotation(Column.class);
@@ -289,7 +274,7 @@ public class EntityFieldImpl implements EntityField
 	{
 		Embedded embedded = field.getAnnotation(Embedded.class);
 		if (embedded != null) {
-			if (getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @Embedded.");
 			}//if
 
@@ -303,7 +288,7 @@ public class EntityFieldImpl implements EntityField
 	{
 		OneToOne oneToOne = field.getAnnotation(OneToOne.class);
 		if (oneToOne != null) {
-			if (getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @OneToOne.");
 			}//if
 			setMappingType(MappingType.ONE_TO_ONE);
@@ -319,7 +304,7 @@ public class EntityFieldImpl implements EntityField
 	{
 		OneToMany oneToMany = field.getAnnotation(OneToMany.class);
 		if (oneToMany != null) {
-			if (getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @OneToMany.");
 			}//if
 
@@ -336,7 +321,7 @@ public class EntityFieldImpl implements EntityField
 	{
 		ManyToOne manyToOne = field.getAnnotation(ManyToOne.class);
 		if (manyToOne != null) {
-			if (getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @ManyToOne.");
 			}//if
 
@@ -352,7 +337,7 @@ public class EntityFieldImpl implements EntityField
 	{
 		ManyToMany manyToMany = field.getAnnotation(ManyToMany.class);
 		if (manyToMany != null) {
-			if (getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!isEntityField()) {
 				throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @ManyToMany.");
 			}//if
 
@@ -372,7 +357,6 @@ public class EntityFieldImpl implements EntityField
 			try {
 				//Check if the converter class was explicitly overridden
 				if (customType.converter() != null) {
-					fieldType = FieldType.TYPE_CUSTOMTYPE;
 					converter = (FieldConvertType<?, ?>) customType.converter().getConstructor().newInstance();
 					return;
 				}//if
@@ -390,32 +374,29 @@ public class EntityFieldImpl implements EntityField
 
 		ConverterClass converterClass = EntityMetaDataManager.getConvertClass(type);
 		if (converterClass != null) {
-			fieldType = FieldType.TYPE_CUSTOMTYPE;
 			converter = converterClass.getConverter();
 		}//if
 		else {
-			switch (fieldType) {
-				case TYPE_ENUM -> {
+			if (type.isAssignableFrom(Enum.class)) {
+				Enumerated enumField = field.getAnnotation(Enumerated.class);
+				if (enumField == null) {
+					LOG.warn("{}: Field '{}' is not annotated as an enum, assuming it to be one - Developers must fix this", enityClass.getName(), field.getName());
 					converter = new EnumFieldType((Class<Enum<?>>) type);
-					fieldType = FieldType.TYPE_CUSTOMTYPE;
-				}
-				case TYPE_ORDINAL_ENUM -> {
-					converter = new OrdinalEnumFieldType((Class<Enum<?>>) type);
-					fieldType = FieldType.TYPE_CUSTOMTYPE;
-				}
-				case TYPE_OBJECT -> {
-					converter = new ObjectFieldType();
-					fieldType = FieldType.TYPE_CUSTOMTYPE;
-				}
-				case TYPE_ENTITY -> {
-					//ignore
-				}
-				default -> LOG.warn("No converter class found for field {} type {}", name, fieldType);
+				}//if
+				else {
+					if (isEntityField()) {
+						throw new PersistenceException(enityClass.getName() + "::" + getName() + " is referencing an Entity type and cannot be annotated with @Enumerated.");
+					}//if
 
+					converter = (enumField.value() == EnumType.ORDINAL ? new OrdinalEnumFieldType((Class<Enum<?>>) type) : new EnumFieldType((Class<Enum<?>>) type));
+				}//if
 			}
-		}//else
-
-
+			else {
+				if (!isEntityField()) {
+					converter = new ObjectFieldType();
+				}
+			}
+		}
 	}//checkForConvert
 
 	@Override

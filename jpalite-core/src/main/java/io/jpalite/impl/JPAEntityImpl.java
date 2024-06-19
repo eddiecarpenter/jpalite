@@ -37,8 +37,6 @@ import java.io.*;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -208,7 +206,7 @@ public class JPAEntityImpl implements JPAEntity
 							toString.append("[Lazy]");
 						}//if
 						else {
-							Object val = _getField(field.getName());
+							Object val = field.invokeGetter(this);
 							if (val instanceof Map<?, ?> mapVal) {
 								val = "[Map " + mapVal.size() + "  items]";
 							}//if
@@ -576,7 +574,7 @@ public class JPAEntityImpl implements JPAEntity
 	{
 		if ($$state != newState && newState != EntityState.REMOVED) {
 			$$metadata.getEntityFields().stream()
-					.filter(f -> f.getFieldType() == FieldType.TYPE_ENTITY && f.getMappingType() != MappingType.ONE_TO_MANY)
+					.filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
 					.forEach(f -> {
 						JPAEntity vEntity = (JPAEntity) f.invokeGetter(this);
 						if (vEntity != null) {
@@ -599,7 +597,7 @@ public class JPAEntityImpl implements JPAEntity
 		if ($$persistenceContext != persistenceContext) {
 			$$persistenceContext = persistenceContext;
 			$$metadata.getEntityFields().stream()
-					.filter(f -> f.getFieldType() == FieldType.TYPE_ENTITY && f.getMappingType() != MappingType.ONE_TO_MANY)
+					.filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
 					.forEach(f -> {
 						JPAEntity vEntity = (JPAEntity) f.invokeGetter(this);
 						if (vEntity != null) {
@@ -623,7 +621,7 @@ public class JPAEntityImpl implements JPAEntity
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public <X> X _getField(@Nonnull String fieldName)
+	public <X> X _getDBValue(@Nonnull String fieldName)
 	{
 		EntityField entityField = _getMetaData().getEntityField(fieldName);
 
@@ -632,13 +630,11 @@ public class JPAEntityImpl implements JPAEntity
 			return null;
 		}//if
 
-		return (X) switch (entityField.getFieldType()) {
-			case TYPE_CUSTOMTYPE -> entityField.getConverter().convertToDatabaseColumn(value);
-			case TYPE_ENUM -> ((Enum<?>) value).name();
-			case TYPE_ORDINAL_ENUM -> ((Enum<?>) value).ordinal();
+		if (entityField.isEntityField()) {
+			return (X) value;
+		}
 
-			default -> value;
-		};
+		return (X) entityField.getConverter().convertToDatabaseColumn(value);
 	}//getField
 
 	@Override
@@ -738,66 +734,6 @@ public class JPAEntityImpl implements JPAEntity
 		}//else
 	}//_setPrimaryKey
 
-	//<editor-fold desc="All the Reader methods">
-	protected String _JPAReadString(ResultSet resultSet, int column) throws SQLException
-	{
-		String value = resultSet.getString(column);
-		return (resultSet.wasNull()) ? null : value;
-	}//_JPAReadString
-
-	protected Long _JPAReadLong(ResultSet resultSet, int column) throws SQLException
-	{
-		long value = resultSet.getLong(column);
-		return (resultSet.wasNull()) ? null : value;
-	}//_JPAReadLong
-
-	protected Boolean _JPAReadBoolean(ResultSet resultSet, int column) throws SQLException
-	{
-		boolean value = resultSet.getBoolean(column);
-		return (resultSet.wasNull() ? null : value);
-	}//_JPAReadBoolean
-
-	protected Integer _JPAReadInteger(ResultSet resultSet, int column) throws SQLException
-	{
-		int value = resultSet.getInt(column);
-		return (resultSet.wasNull() ? null : value);
-	}//_JPAReadInteger
-
-	protected Double _JPAReadDouble(ResultSet resultSet, int column) throws SQLException
-	{
-		double value = resultSet.getDouble(column);
-		return (resultSet.wasNull() ? null : value);
-	}//_JPAReadDouble
-
-	protected LocalDateTime _JPAReadLocalDateTime(ResultSet resultSet, int column) throws SQLException
-	{
-		Timestamp value = resultSet.getTimestamp(column);
-		return (resultSet.wasNull() ? null : value.toLocalDateTime());
-	}//_JPAReadLocalDateTime
-
-	protected Object _JPAReadCustomType(ResultSet resultSet, EntityField field, int column) throws SQLException
-	{
-		return field.getConverter().convertToEntityAttribute(resultSet, column);
-	}//_JPAReadCustomType
-
-	private Object _JPAReadENUM(EntityField field, ResultSet row, int column) throws SQLException
-	{
-		String enumName = row.getString(column);
-		for (Object enumValue : field.getType().getEnumConstants()) {
-			if (((Enum<?>) enumValue).name().equals(enumName)) {
-				return enumValue;
-			}//if
-		}//for
-
-		return null;
-	}//_JPAReadENUM
-
-	private Object _JPAReadOrdinalENUM(EntityField field, ResultSet row, int column) throws SQLException
-	{
-		int ordinal = row.getInt(column);
-		return field.getType().getEnumConstants()[ordinal];
-	}//_JPAReadOrdinalENUM
-
 	public JPAEntity _JPAReadEntity(EntityField field, ResultSet resultSet, String colPrefix, int col) throws SQLException
 	{
 		JPAEntity managedEntity = null;
@@ -840,31 +776,14 @@ public class JPAEntityImpl implements JPAEntity
 	{
 		try {
 			$$mapping = true;
-			switch (field.getFieldType()) {
-				case TYPE_BOOLEAN -> field.invokeSetter(this, _JPAReadBoolean(row, columnNr));
-				case TYPE_INTEGER -> field.invokeSetter(this, _JPAReadInteger(row, columnNr));
-				case TYPE_LONGLONG -> field.invokeSetter(this, _JPAReadLong(row, columnNr));
-				case TYPE_DOUBLEDOUBLE -> field.invokeSetter(this, _JPAReadDouble(row, columnNr));
-
-				case TYPE_BOOL -> field.invokeSetter(this, row.getBoolean(columnNr));
-				case TYPE_INT -> field.invokeSetter(this, row.getInt(columnNr));
-				case TYPE_LONG -> field.invokeSetter(this, row.getLong(columnNr));
-				case TYPE_DOUBLE -> field.invokeSetter(this, row.getDouble(columnNr));
-
-				case TYPE_STRING -> field.invokeSetter(this, _JPAReadString(row, columnNr));
-				case TYPE_TIMESTAMP -> field.invokeSetter(this, row.getTimestamp(columnNr));
-				case TYPE_LOCALTIME -> field.invokeSetter(this, _JPAReadLocalDateTime(row, columnNr));
-				case TYPE_ENUM -> field.invokeSetter(this, _JPAReadENUM(field, row, columnNr));
-				case TYPE_ORDINAL_ENUM -> field.invokeSetter(this, _JPAReadOrdinalENUM(field, row, columnNr));
-				case TYPE_BYTES -> field.invokeSetter(this, row.getBytes(columnNr));
-				case TYPE_OBJECT -> field.invokeSetter(this, row.getObject(columnNr));
-				case TYPE_CUSTOMTYPE -> field.invokeSetter(this, _JPAReadCustomType(row, field, columnNr));
-				case TYPE_ENTITY -> {
-					if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
-						field.invokeSetter(this, _JPAReadEntity(field, row, colPrefix, columnNr));
-					}//if
-				}//case
-			}//switch
+			if (field.isEntityField()) {
+				if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
+					field.invokeSetter(this, _JPAReadEntity(field, row, colPrefix, columnNr));
+				}//if
+			}
+			else {
+				field.invokeSetter(this, field.getConverter().convertToEntityAttribute(row, columnNr));
+			}
 		}//try
 		catch (SQLException ex) {
 			throw new EntityMapException("Error setting field '" + field.getName() + "'", ex);
@@ -921,7 +840,7 @@ public class JPAEntityImpl implements JPAEntity
 			Object value = field.invokeGetter(this);
 			if (value != null) {
 				out.writeShort(field.getFieldNr());
-				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+				if (field.isEntityField()) {
 					EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
 					if (metaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
 						((JPAEntityImpl) value).writeFields(out);
@@ -955,7 +874,7 @@ public class JPAEntityImpl implements JPAEntity
 		while (fieldNr > 0) {
 			EntityField field = $$metadata.getEntityFieldByNr(fieldNr);
 
-			if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+			if (field.isEntityField()) {
 				EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
 
 				JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
@@ -985,7 +904,7 @@ public class JPAEntityImpl implements JPAEntity
 		for (EntityField field : fieldList) {
 			Object value = field.invokeGetter(this);
 			if (!field.isNullable() || value != null) {
-				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+				if (field.isEntityField()) {
 					if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
 						jsonGenerator.writeFieldName(field.getName());
 						if (value == null) {
@@ -1060,7 +979,7 @@ public class JPAEntityImpl implements JPAEntity
 				field.invokeSetter(this, null);
 			}
 			else {
-				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+				if (field.isEntityField()) {
 					EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
 
 					JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();

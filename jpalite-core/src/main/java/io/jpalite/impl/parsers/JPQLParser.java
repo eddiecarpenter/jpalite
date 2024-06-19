@@ -831,7 +831,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 					EntityInfo foundInfo = entityInfo;
 					entityInfo = findJoins(path, entityInfo);
 					EntityField entityField = entityInfo.getMetadata().getEntityField(field);
-					if (entityField.getFieldType() == FieldType.TYPE_ENTITY) {
+					if (entityField.isEntityField()) {
 						entityInfo = findJoins(tableColumn.getFullyQualifiedName(), foundInfo);
 						tableColumn.setColumnName(entityInfo.getMetadata().getIdField().getName());
 					}
@@ -947,7 +947,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 		String pathElement = pathElements[0];
 		for (int i = 1; i < pathElements.length; i++) {
 			EntityField field = entityInfo.getMetadata().getEntityField(pathElements[i]);
-			if (field.getFieldType() != FieldType.TYPE_ENTITY) {
+			if (!field.isEntityField()) {
 				break;
 			}//if
 

@@ -69,13 +69,6 @@ public interface EntityField
 	Class<?> getType();
 
 	/**
-	 * Method to get the field type
-	 *
-	 * @return The field type
-	 */
-	FieldType getFieldType();
-
-	/**
 	 * Method to get the column name
 	 *
 	 * @return The column name
@@ -182,4 +175,11 @@ public interface EntityField
 	@SuppressWarnings({"java:S3740", "rawtypes"})
 	// Suppress warning for generic types
 	FieldConvertType getConverter();
+
+	/**
+	 * Determines whether the field is an entity field.
+	 *
+	 * @return true if the field is an entity field, false otherwise
+	 */
+	boolean isEntityField();
 }

@@ -17,47 +17,23 @@
 
 package io.jpalite;
 
-import org.infinispan.protostream.descriptors.Type;
-import org.infinispan.protostream.descriptors.WireType;
-
 public enum FieldType
 {
-	TYPE_BOOLEAN(Type.BOOL, null),
-	TYPE_INTEGER(Type.INT32, null),
-	TYPE_LONGLONG(Type.INT64, null),
-	TYPE_DOUBLEDOUBLE(Type.DOUBLE, null),
-	TYPE_BOOL(Type.BOOL, null),
-	TYPE_INT(Type.INT32, null),
-	TYPE_LONG(Type.INT64, null),
-	TYPE_DOUBLE(Type.DOUBLE, null),
-	TYPE_STRING(Type.STRING, null),
-	TYPE_TIMESTAMP(Type.FIXED64, null),
-	TYPE_LOCALTIME(Type.FIXED64, null),
-	TYPE_CUSTOMTYPE(Type.MESSAGE, null),
-	TYPE_ENUM(Type.STRING, null),
-	TYPE_ORDINAL_ENUM(Type.INT32, null),
-	TYPE_BYTES(Type.BYTES, null),
-	TYPE_OBJECT(Type.BYTES, null),
-	TYPE_ENTITY(Type.MESSAGE, null);
-
-	private final String type;
-	private final Type protoType;
-
-	FieldType(Type protoType, String type)
-	{
-		this.protoType = protoType;
-		this.type = type;
-	}
-
-	public String getProtoType()
-	{
-		return protoType.equals(Type.MESSAGE) ? type : protoType.toString();
-	}
-
-	public int getWireTypeTag(int fieldNr)
-	{
-		return WireType.makeTag(fieldNr, protoType.getWireType());
-	}
+	TYPE_BOOLEAN,
+	TYPE_INTEGER,
+	TYPE_LONGLONG,
+	TYPE_DOUBLEDOUBLE,
+	TYPE_BOOL,
+	TYPE_INT,
+	TYPE_LONG,
+	TYPE_DOUBLE,
+	TYPE_STRING,
+	TYPE_TIMESTAMP,
+	TYPE_LOCALTIME,
+	TYPE_ENUM,
+	TYPE_BYTES,
+	TYPE_OBJECT,
+	TYPE_ENTITY;
 
 	public static FieldType fieldType(Class<?> fieldType)
 	{
@@ -73,6 +49,7 @@ public enum FieldType
 			case "String" -> TYPE_STRING;
 			case "Timestamp" -> TYPE_TIMESTAMP;
 			case "LocalDateTime" -> TYPE_LOCALTIME;
+			case "EnumType" -> TYPE_ENUM;
 			case "byte[]", "byte[][]" -> TYPE_BYTES;
 			default -> {
 				if (JPAEntity.class.isAssignableFrom(fieldType)) {

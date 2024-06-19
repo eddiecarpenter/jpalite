@@ -107,7 +107,7 @@ public class JPALiteQueryImpl<T> implements Query
 	private boolean cacheResultList;
 	private boolean showSql;
 	private Class<?>[] queryResultTypes;
-	private FieldType fieldType;
+	private FieldType returnType;
 
 	/**
 	 * This method supports both Native and JPQL based queries.
@@ -197,7 +197,7 @@ public class JPALiteQueryImpl<T> implements Query
 			checkedClass = checkedClass.arrayType();
 		}//if
 
-		fieldType = FieldType.fieldType(checkedClass);
+		returnType = FieldType.fieldType(checkedClass);
 	}//checkResultClass
 
 	private void checkUsingPositionalParameters()
@@ -223,7 +223,7 @@ public class JPALiteQueryImpl<T> implements Query
 	private Object getColumnValue(Object entity, ResultSet resultSet, int columnNr)
 	{
 		try {
-			return switch (fieldType) {
+			return switch (returnType) {
 				case TYPE_BOOLEAN -> resultSet.getBoolean(columnNr);
 				case TYPE_INTEGER -> resultSet.getInt(columnNr);
 				case TYPE_LONGLONG -> resultSet.getLong(columnNr);
@@ -267,7 +267,7 @@ public class JPALiteQueryImpl<T> implements Query
 
 	private Object getNewObject(Class<?> returnClass)
 	{
-		if (fieldType == FieldType.TYPE_ENTITY) {
+		if (returnType == FieldType.TYPE_ENTITY) {
 			try {
 				return returnClass.getConstructor().newInstance();
 			}//try
@@ -285,7 +285,7 @@ public class JPALiteQueryImpl<T> implements Query
 			return buildArray(resultSet);
 		}//if
 		else {
-			if (fieldType == FieldType.TYPE_ENTITY) {
+			if (returnType == FieldType.TYPE_ENTITY) {
 
 				JPAEntity entity = (JPAEntity) getNewObject(resultClass);
 				if (queryResultTypes.length == 0) {
@@ -548,7 +548,7 @@ public class JPALiteQueryImpl<T> implements Query
 			//Must parse the query before check the cache
 			String queryStr = applyLocking(getQueryWithLimits(firstResult, maxResults));
 
-			if (fieldType == FieldType.TYPE_ENTITY) {
+			if (returnType == FieldType.TYPE_ENTITY) {
 				T result = checkCache();
 				if (result != null) {
 					return result;

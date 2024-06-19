@@ -161,7 +161,7 @@ public interface JPAEntity extends Serializable
 	 * @param fieldName The field name
 	 * @return The value assigned to the value
 	 */
-	<X> X _getField(@Nonnull String fieldName);
+	<X> X _getDBValue(@Nonnull String fieldName);
 
 	/**
 	 * Allow the caller to update a restricted field (VERSION and NON-UPDATABLE).

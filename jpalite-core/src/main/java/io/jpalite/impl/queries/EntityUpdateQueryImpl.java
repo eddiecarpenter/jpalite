@@ -65,7 +65,7 @@ public class EntityUpdateQueryImpl implements EntityQuery
 	{
 		for (EntityField field : metaData.getEntityFields()) {
 			if (!entity._isLazyLoaded(field.getName())) {
-				Object val = entity._getField(field.getName());
+				Object val = entity._getDBValue(field.getName());
 
 				if (field.getMappingType() == MappingType.EMBEDDED && val instanceof JPAEntity vLinkEntity && vLinkEntity._isEntityModified()) {
 					addFields(vLinkEntity, columns, where, whereParams);

@@ -72,7 +72,7 @@ public class EntityInsertQueryImpl implements EntityQuery
 				continue;
 			}//if
 
-			Object val = entity._getField(field.getName());
+			Object val = entity._getDBValue(field.getName());
 			if (field.isVersionField()) {
 				val = generateVersionValue(metaData.getVersionField(), val);
 			}//if

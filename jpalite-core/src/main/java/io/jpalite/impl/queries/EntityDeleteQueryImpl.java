@@ -64,7 +64,7 @@ public class EntityDeleteQueryImpl implements EntityQuery
 				query.append(" and ");
 			}//if
 			query.append(field.getColumn()).append("=?");
-			parameters.add(entity._getField(field.getName()));
+			parameters.add(entity._getDBValue(field.getName()));
 			paramNr++;
 		}//for
 
@@ -81,7 +81,7 @@ public class EntityDeleteQueryImpl implements EntityQuery
 
 			query.append(" and ")
 					.append(field.getColumn()).append("=?");
-			parameters.add(entity._getField(field.getName()));
+			parameters.add(entity._getDBValue(field.getName()));
 		}//if
 
 		return query.toString();

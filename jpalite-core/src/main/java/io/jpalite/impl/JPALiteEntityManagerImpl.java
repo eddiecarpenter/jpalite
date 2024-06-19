@@ -327,7 +327,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 		entity._getMetaData()
 				.getEntityFields()
 				.stream()
-				.filter(f -> f.getFieldType() == FieldType.TYPE_ENTITY && !entity._isLazyLoaded(f.getName()))
+				.filter(f -> f.isEntityField() && !entity._isLazyLoaded(f.getName()))
 				.filter(f -> f.getCascade().contains(CascadeType.ALL) || f.getCascade().contains(CascadeType.MERGE))
 				.forEach(f ->
 						 {
