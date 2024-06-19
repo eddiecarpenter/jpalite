@@ -43,8 +43,8 @@ import java.util.Set;
 /**
  * Goal which touches a timestamp file.
  *
- * @goal1 jpalite
- * @phase1 process-sources
+ * @goal jpalite
+ * @phase process-sources
  * <p>
  * {@code ...
  * <configuration>
@@ -161,4 +161,4 @@ public class JPALiteMojo extends AbstractMojo
 			}//if
 		}//finally
 	}//execute
-}//TradeSwitchJPAMojo
+}//JPALiteMojo

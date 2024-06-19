@@ -15,9 +15,10 @@
  *  limitations under the License.
  */
 
-package io.jpalite.impl;
+package io.jpalite.impl.caching;
 
 import io.jpalite.*;
+import io.jpalite.impl.JPAConfig;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -29,16 +30,16 @@ import io.quarkus.infinispan.client.runtime.InfinispanClientProducer;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.SharedCacheMode;
-import jakarta.transaction.*;
+import jakarta.transaction.SystemException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.query.Query;
+import org.infinispan.commons.configuration.StringConfiguration;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -51,12 +52,12 @@ public class EntityL2CacheImpl implements EntityCache
 	public static final String ENTITY_ATTR = "entity";
 	private RemoteCacheManager remoteCacheManager;
 	private final JPALitePersistenceUnit persistenceUnit;
-	private static final boolean CACHING_ENABLED = JPAConfig.getValue("tradeswitch.persistence.l2cache", true);
+	private static final boolean CACHING_ENABLED = JPAConfig.getValue("jpalite.persistence.l2cache", true);
 	private boolean inTransaction;
 	private final List<CacheEntry> batchQueue = new ArrayList<>();
 
 	private static final int ACTION_ADD = 0;
-	private static final int ACTION_UPDATE = 1;
+	private static final int ACTION_REPLACE = 1;
 	private static final int ACTION_REMOVE = 2;
 
 	@Getter
@@ -106,9 +107,9 @@ public class EntityL2CacheImpl implements EntityCache
 				}//if
 			}//if
 
-			RemoteCache<String, T> cache = remoteCacheManager.getCache(persistenceUnit.getCacheName());
+			RemoteCache<String, T> cache = remoteCacheManager.getCache(persistenceUnit.getCacheRegionPrefix());
 			if (cache == null) {
-				cache = remoteCacheManager.administration().getOrCreateCache(persistenceUnit.getCacheName(), persistenceUnit.getCacheConfig());
+				cache = remoteCacheManager.administration().getOrCreateCache(persistenceUnit.getCacheRegionPrefix(), new StringConfiguration(persistenceUnit.getCacheConfig()));
 			}//if
 			return cache;
 		}
@@ -165,39 +166,9 @@ public class EntityL2CacheImpl implements EntityCache
 		return null;
 	}//find
 
-	@Override
-	@Nonnull
-	public <T> List<T> search(Class<T> entityType, String query)
-	{
-		Span span = TRACER.spanBuilder("EntityL2CacheImpl::search").setSpanKind(SpanKind.SERVER).startSpan();
-		try (Scope ignored = span.makeCurrent()) {
-			checkEntityType(entityType);
-			RemoteCache<String, String> cache = getCache();
-			if (cache != null) {
-				String queryText = "from org.tradeswitch." + entityType.getSimpleName() + " " + query;
-				try {
-					span.setAttribute("query", queryText);
-					span.setAttribute(ENTITY_ATTR, entityType.getName());
-
-					LOG.debug("Querying L2 cache : {}", queryText);
-					Query<T> q = cache.query(queryText);
-					List<T> result = q.execute().list();
-					LOG.debug("Querying L2 cache - Found {} records", result.size());
-					return result;
-				}//try
-				catch (HotRodClientException ex) {
-					LOG.debug("Search error:{}", ex.getMessage(), ex);
-				}//catch
-			}//if
-			return Collections.emptyList();
-		}//try
-		finally {
-			span.end();
-		}//finally
-	}//search
 
 	@Override
-	public void update(JPAEntity entity)
+	public void replace(JPAEntity entity)
 	{
 		checkEntityInstance(entity);
 
@@ -205,11 +176,11 @@ public class EntityL2CacheImpl implements EntityCache
 			RemoteCache<String, Object> cache = getCache();
 			if (cache != null) {
 				String key = makeCacheKey(entity.getClass(), entity._getPrimaryKey());
-				batchQueue.add(new CacheEntry(ACTION_UPDATE, key, entity, -1, TimeUnit.SECONDS, entity._getMetaData().getIdleTime(), entity._getMetaData().getCacheTimeUnit()));
+				batchQueue.add(new CacheEntry(ACTION_REPLACE, key, entity, -1, TimeUnit.SECONDS, entity._getMetaData().getIdleTime(), entity._getMetaData().getCacheTimeUnit()));
 				batchQueue.add(new CacheEntry(ACTION_ADD, entity.getClass().getName(), System.currentTimeMillis(), -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
 			}//if
 		}//if
-	}//update
+	}//replace
 
 	@Override
 	public void add(JPAEntity entity)
@@ -237,61 +208,33 @@ public class EntityL2CacheImpl implements EntityCache
 	}//add
 
 	@Override
-	public void remove(JPAEntity entity)
+	@Nonnull
+	public <T> Instant getLastModified(Class<T> entityType)
 	{
-		Span span = TRACER.spanBuilder("EntityL2CacheImpl::remove").setSpanKind(SpanKind.SERVER).startSpan();
-		try (Scope ignored = span.makeCurrent()) {
-			checkEntityInstance(entity);
-
-			if (CACHING_ENABLED) {
-				long start = System.currentTimeMillis();
-				RemoteCache<String, Object> cache = getCache();
-				if (cache != null) {
-					String key = makeCacheKey(entity.getClass(), entity._getPrimaryKey());
-					span.setAttribute("key", key);
-					span.setAttribute(ENTITY_ATTR, entity._getMetaData().getName());
-					if (inTransaction) {
-						batchQueue.add(new CacheEntry(ACTION_REMOVE, key, entity, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
-						batchQueue.add(new CacheEntry(ACTION_ADD, entity.getClass().getName(), System.currentTimeMillis(), -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
-					}//if
-					else {
-						cache.remove(key);
-						//Write a timestamp for the update
-						cache.put(entity.getClass().getName(), System.currentTimeMillis(), -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS);
-						LOG.debug("Removed Entity with key [{}] from L2 cache in {}m", key, System.currentTimeMillis() - start);
-					}//else
-				}//if
-			}//if
-		}//try
-		finally {
-			span.end();
-		}//finally
-	}//remove
-
-	public <T> long lastModified(Class<T> entityType)
-	{
-		Long time = -1L;
-		Span span = TRACER.spanBuilder("EntityL2CacheImpl::lastModified").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("EntityL2CacheImpl::getLastModified").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			checkEntityType(entityType);
+
+			Long time;
 			RemoteCache<String, Long> cache = getCache();
 			if (cache != null) {
 				span.setAttribute(ENTITY_ATTR, entityType.getName());
 				time = cache.get(entityType.getName());
-				if (time != null) {
-					return time;
-				}//if
-
-				time = System.currentTimeMillis();
-				cache.put(entityType.getName(), time, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS);
+				if (time == null) {
+					time = System.currentTimeMillis();
+					cache.put(entityType.getName(), time, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS);
+				}
 			}//if
+			else {
+				time = System.currentTimeMillis();
+			}
+
+			return Instant.ofEpochMilli(time);
 		}//try
 		finally {
 			span.end();
 		}//finally
-
-		return time;
-	}//lastModified
+	}//getLastModified
 
 	@Override
 	public boolean contains(Class entityType, Object primaryKey)
@@ -362,13 +305,13 @@ public class EntityL2CacheImpl implements EntityCache
 	}//evictAll
 
 	@Override
-	public void begin() throws NotSupportedException, SystemException
+	public void begin() throws SystemException
 	{
 		Span span = TRACER.spanBuilder("EntityL2CacheImpl::begin").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			if (CACHING_ENABLED) {
 				if (inTransaction) {
-					throw new NotSupportedException("Transaction already in progress");
+					throw new SystemException("Transaction already in progress");
 				}//if
 				inTransaction = true;
 			}//if
@@ -379,7 +322,7 @@ public class EntityL2CacheImpl implements EntityCache
 	}//begin
 
 	@Override
-	public void commit() throws RollbackException, HeuristicMixedException, HeuristicRollbackException, SecurityException, IllegalStateException, SystemException
+	public void commit() throws SystemException
 	{
 		Span span = TRACER.spanBuilder("EntityL2CacheImpl::commit").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
@@ -415,7 +358,7 @@ public class EntityL2CacheImpl implements EntityCache
 
 
 	@Override
-	public void rollback() throws IllegalStateException, SecurityException, SystemException
+	public void rollback() throws SystemException
 	{
 		if (CACHING_ENABLED) {
 			if (!inTransaction) {

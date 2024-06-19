@@ -14,25 +14,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package io.jpalite.test;
 
-package io.jpalite;
+import io.jpalite.impl.JPAEntityImpl;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.Getter;
+import lombok.Setter;
 
-import jakarta.persistence.AttributeConverter;
-import org.infinispan.protostream.GeneratedSchema;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-public interface TradeSwitchConvert<X, Y> extends AttributeConverter<X, Y>
+/**
+ *
+ */
+@Embeddable
+@Getter
+@Setter
+public class FullName extends JPAEntityImpl
 {
-	String getFieldType();
 
-	String prototypeLib();
-
-	GeneratedSchema getSchema();
-
-	default X convertToEntityAttribute(ResultSet pResultSet, int pColumn) throws SQLException
+	public FullName()
 	{
-		return convertToEntityAttribute((Y) pResultSet.getObject(pColumn));
 	}
-}
+
+	public FullName(String pName, String pSurname)
+	{
+		name = pName;
+		surname = pSurname;
+	}
+
+	@Column(name = "NAME")
+	private String name;
+
+	@Column(name = "SURNAME")
+	private String surname;
+}//FullName
+
+//--------------------------------------------------------------------[ End ]---

@@ -21,7 +21,6 @@ import io.jpalite.JPALiteTooling;
 import io.jpalite.JPALiteToolingException;
 import jakarta.persistence.*;
 import javassist.*;
-import org.infinispan.protostream.GeneratedSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +43,6 @@ public class JPALiteToolingImpl implements JPALiteTooling
 
 	private final Map<String, String> entityClasses = new TreeMap<>();
 	private final List<CtClass> converterClasses = new ArrayList<>();
-	private final List<String> protoStreamClasses = new ArrayList<>();
 	private String outputDir;
 	private final ClassPool classPool;
 
@@ -121,11 +119,6 @@ public class JPALiteToolingImpl implements JPALiteTooling
 			CtClass jpaEntityImpl = classPool.get(jpaEntityClass.getName());
 
 			entityClass.setSuperclass(jpaEntityImpl);
-			if (entityClass.getAnnotation(Cacheable.class) != null) {
-				CtClass serializationContext = classPool.get(GeneratedSchema.class.getName());
-				entityClass.addInterface(serializationContext);
-				protoStreamClasses.add(entityClass.getName());
-			}//if
 			for (CtField field : entityClass.getDeclaredFields()) {
 				if (!isStatic(field.getModifiers()) && !isFinal(field.getModifiers()) && !isTransient(field.getModifiers()) && field.getAnnotation(Transient.class) == null) {
 					applyChangeTracker(entityClass, field);
@@ -221,7 +214,7 @@ public class JPALiteToolingImpl implements JPALiteTooling
 			classPool.appendSystemPath();
 
 			Files.createDirectories(Path.of(outputDir + "/META-INF/services"));
-			Files.createDirectories(Path.of(outputDir + "/META-INF/native-image/org.tradeswitch.persistent"));
+			Files.createDirectories(Path.of(outputDir + "/META-INF/native-image/io.jpalite.persistent"));
 
 			//Build a list of all the converter classes first
 			for (String className : classList) {
@@ -236,7 +229,7 @@ public class JPALiteToolingImpl implements JPALiteTooling
 			}//for
 
 			try (FileOutputStream outputStream = new FileOutputStream(outputDir + "/META-INF/persistenceUnits.properties");
-				 FileOutputStream nativeImageStream = new FileOutputStream(outputDir + "/META-INF/native-image/org.tradeswitch.persistent/reflect-config.json")) {
+				 FileOutputStream nativeImageStream = new FileOutputStream(outputDir + "/META-INF/native-image/io.jpalite.persistent/reflect-config.json")) {
 				nativeImageStream.write("[\n".getBytes());
 				boolean first = true;
 				for (Map.Entry<String, String> entry : entityClasses.entrySet()) {
@@ -258,7 +251,7 @@ public class JPALiteToolingImpl implements JPALiteTooling
 
 				}
 
-				try (FileOutputStream converterStream = new FileOutputStream(outputDir + "/META-INF/org.tradeswitch.converters")) {
+				try (FileOutputStream converterStream = new FileOutputStream(outputDir + "/META-INF/services/io.jpalite.FieldConvertType")) {
 					for (CtClass convertClass : converterClasses) {
 
 						try {
@@ -290,13 +283,6 @@ public class JPALiteToolingImpl implements JPALiteTooling
 				}//try
 
 				nativeImageStream.write(']');
-			}//try
-
-			try (FileOutputStream outputStream = new FileOutputStream(outputDir + "/META-INF/services/org.infinispan.protostream.SerializationContextInitializer", true)) {
-				for (String className : protoStreamClasses) {
-					outputStream.write(className.getBytes());
-					outputStream.write('\n');
-				}//for
 			}//try
 		}//try
 		catch (NotFoundException ex) {

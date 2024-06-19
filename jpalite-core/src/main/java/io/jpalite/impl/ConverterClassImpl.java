@@ -18,65 +18,38 @@
 package io.jpalite.impl;
 
 import io.jpalite.ConverterClass;
-import io.jpalite.TradeSwitchConvert;
+import io.jpalite.FieldConvertType;
 import jakarta.persistence.Converter;
-import jakarta.persistence.PersistenceException;
-import lombok.Data;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-@Data
+@Slf4j
+@Getter
 public class ConverterClassImpl implements ConverterClass
 {
-	private static final Logger LOG = LoggerFactory.getLogger(ConverterClassImpl.class);
-	private Class<?> convertClass;
-	private boolean autoApply;
-	private TradeSwitchConvert<?, ?> converter;
-	private Class<?> attributeType;
-	private Class<?> dbType;
+	private final boolean autoApply;
+	private final FieldConvertType<?, ?> converter;
+	private final Class<?> attributeType;
 
-	public ConverterClassImpl(Class<?> convertClass)
+
+	public ConverterClassImpl(FieldConvertType<?, ?> converter)
 	{
-		this.convertClass = convertClass;
-		Converter converter = this.convertClass.getAnnotation(Converter.class);
-		if (converter == null) {
-			LOG.warn("Missing @Converter annotation on {}", this.convertClass.getSimpleName());
+		this.converter = converter;
+
+		Converter converterAnnotation = this.converter.getClass().getAnnotation(Converter.class);
+		if (converterAnnotation == null) {
 			autoApply = false;
 		}//if
 		else {
-			autoApply = converter.autoApply();
+			autoApply = converterAnnotation.autoApply();
 		}//else
 
-		for (Method method : this.convertClass.getDeclaredMethods()) {
-			//Not a SYNTHETIC (generated method)
-			if (method.getName().equals("convertToDatabaseColumn") &&
-					((method.getModifiers() & 0x00001000) != 0x00001000) &&
-					method.getParameterTypes().length == 1) {
-				attributeType = method.getParameterTypes()[0];
-				dbType = method.getReturnType();
-				break;
-			}//if
-		}//for
-		if (attributeType == null) {
-			LOG.warn("Error detecting the attribute type in {}", this.convertClass.getSimpleName());
-			attributeType = Object.class;
-			dbType = Object.class;
-		}//if
-
-		try {
-			this.converter = (TradeSwitchConvert<?, ?>) this.convertClass.getConstructor().newInstance();
-		}//try
-		catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException ex) {
-			throw new PersistenceException(this.convertClass.getSimpleName() + " failed to instantiate", ex);
-		}//catch
+		attributeType = converter.getAttributeType();
 	}//ConverterClass
 
 	@Override
 	public String getName()
 	{
-		return convertClass.getCanonicalName();
+		return converter.getClass().getCanonicalName();
 	}
 }//ConverterClass

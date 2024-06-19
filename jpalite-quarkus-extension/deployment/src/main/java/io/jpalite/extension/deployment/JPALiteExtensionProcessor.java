@@ -39,7 +39,8 @@ class JPALiteExtensionProcessor
 	NativeImageResourceBuildItem nativeImageResourceBuildItem()
 	{
 		return new NativeImageResourceBuildItem("META-INF/services/io.jpalite.DataSourceProvider",
-												"META-INF/services/io.jpalite.PersistenceUnitProvider");
+												"META-INF/services/io.jpalite.PersistenceUnitProvider",
+												"META-INF/services/io.jpalite.FieldConvertType");
 	}
 
 	@BuildStep

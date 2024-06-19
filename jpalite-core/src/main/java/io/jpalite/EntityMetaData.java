@@ -128,20 +128,20 @@ public interface EntityMetaData<T>
 	@Nullable
 	@SuppressWarnings("java:S1452")
 	//generic wildcard is required
-	EntityMetaData<?> getIPrimaryKeyMetaData();
+	EntityMetaData<?> getPrimaryKeyMetaData();
 
 	/**
 	 * Return a list of all the defined id fields
 	 *
-	 * @return Set of id fields
+	 * @return List of id fields
 	 */
 	@Nonnull
 	List<EntityField> getIdFields();
 
 	/**
-	 * True if the entity have more than one ID field
+	 * True if the entity has more than one ID field
 	 *
-	 * @return true if there are more than one if fields in the entity
+	 * @return true if there are more than one if field in the entity
 	 */
 	boolean hasMultipleIdFields();
 
@@ -160,14 +160,24 @@ public interface EntityMetaData<T>
 	 */
 	boolean isCacheable();
 
+	/**
+	 * Retrieves the idle time of the entity. The units are dependent the value in {@link #getCacheTimeUnit}
+	 *
+	 * @return The idle time in.
+	 */
 	long getIdleTime();
 
+	/**
+	 * Retrieves the time unit used for caching.
+	 *
+	 * @return The {@link TimeUnit} used for caching.
+	 */
 	TimeUnit getCacheTimeUnit();
 
 	/**
-	 * True if the entity have a version field
+	 * Checks if the entity has a version field.
 	 *
-	 * @return
+	 * @return True if the entity has a version field, false otherwise.
 	 */
 	boolean hasVersionField();
 
@@ -179,14 +189,12 @@ public interface EntityMetaData<T>
 	EntityField getVersionField();
 
 	/**
-	 * Return a comma delimited string with columns
-	 */
-	String getColumns();
-
-	/**
-	 * The protobuf protocal file for the entity
+	 * Deprecated since version 3.0.0 and marked for removal.
+	 * Returns the columns associated with the entity.
 	 *
-	 * @return The proto file as a string
+	 * @return The columns as a comma-delimited string.
+	 * @deprecated This method is deprecated and will be removed in a future version.
 	 */
-	String getProtoFile();
+	@Deprecated(since = "3.0.0", forRemoval = true)
+	String getColumns();
 }//EntityMetaData

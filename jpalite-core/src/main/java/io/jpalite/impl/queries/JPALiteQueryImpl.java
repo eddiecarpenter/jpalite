@@ -149,13 +149,13 @@ public class JPALiteQueryImpl<T> implements Query
 	 */
 	public JPALiteQueryImpl(String queryText, QueryLanguage queryLanguage, PersistenceContext persistenceContext, Class<T> resultClass, @Nonnull Map<String, Object> hints, LockModeType lockMode)
 	{
-		Span span = TRACER.spanBuilder("TradeSwitchQueryImpl::Init").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("JPAQuery::Init").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			if (queryText == null || queryText.isEmpty()) {
 				throw new IllegalArgumentException("No query was specified");
 			}//if
 
-			Boolean globalShowSQL = (Boolean) persistenceContext.getProperties().get(JPALITE_SHOW_SQL);
+			Boolean globalShowSQL = (Boolean) persistenceContext.getProperties().get(PERSISTENCE_SHOW_SQL);
 			showSql = globalShowSQL != null && globalShowSQL;
 			this.lockMode = lockMode;
 			rawQuery = queryText;
@@ -183,12 +183,12 @@ public class JPALiteQueryImpl<T> implements Query
 		finally {
 			span.end();
 		}
-	}//TradeSwitchQueryImpl
+	}//JpaLiteQueryImpl
 
 	public JPALiteQueryImpl(String queryText, QueryLanguage queryLanguage, PersistenceContext persistenceContext, Class<T> resultClass, @Nonnull Map<String, Object> hints)
 	{
 		this(queryText, queryLanguage, persistenceContext, resultClass, hints, NONE);
-	}//TradeSwitchQueryImpl
+	}//JpaLiteQueryImpl
 
 	private void checkResultClass(Class<?> returnClass)
 	{
@@ -286,12 +286,25 @@ public class JPALiteQueryImpl<T> implements Query
 		}//if
 		else {
 			if (fieldType == FieldType.TYPE_ENTITY) {
+
+				JPAEntity entity = (JPAEntity) getNewObject(resultClass);
 				if (queryResultTypes.length == 0) {
-					return persistenceContext.mapResultSet(getNewObject(resultClass), resultSet);
+					entity._mapResultSet(null, resultSet);
 				}//if
 				else {
-					return persistenceContext.mapResultSet(getNewObject(resultClass), "c1", resultSet);
+					entity._mapResultSet("c1", resultSet);
 				}//else
+
+				//Check if the entity is not already in L1 Cache
+				JPAEntity l1Entity = (JPAEntity) persistenceContext.l1Cache().find(entity.get$$EntityClass(), entity._getPrimaryKey());
+				if (l1Entity == null) {
+					persistenceContext.l1Cache().manage(entity);
+				}//if
+				else {
+					entity = l1Entity;
+				}
+
+				return entity;
 			}//if
 			else {
 				return getColumnValue(null, resultSet, 1);
@@ -385,7 +398,7 @@ public class JPALiteQueryImpl<T> implements Query
 
 	private Object executeQuery(String sqlQuery, SQLFunction<ResultSet, Object> function)
 	{
-		Span span = TRACER.spanBuilder("TradeSwitchQueryImpl::executeQuery").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("JPAQuery::executeQuery").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent();
 			 Connection connection = persistenceContext.getConnection(getConnectionName());
 			 PreparedStatement vStatement = bindParameters(connection.prepareStatement(sqlQuery))) {
@@ -428,7 +441,7 @@ public class JPALiteQueryImpl<T> implements Query
 	@SuppressWarnings("unchecked")
 	public List<T> getResultList()
 	{
-		Span span = TRACER.spanBuilder("TradeSwitchQueryImpl::getResultList").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("JPAQuery::getResultList").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			span.setAttribute("resultType", resultClass.getSimpleName());
 
@@ -508,7 +521,7 @@ public class JPALiteQueryImpl<T> implements Query
 				if (result instanceof JPAEntity entity) {
 					persistenceContext.l1Cache().manage(entity);
 
-					FetchType hintValue = (FetchType) hints.get(TRADESWITCH_OVERRIDE_FETCHTYPE);
+					FetchType hintValue = (FetchType) hints.get(PERSISTENCE_OVERRIDE_FETCHTYPE);
 					if (hintValue == null || hintValue.equals(FetchType.EAGER)) {
 						entity._lazyFetchAll(hintValue != null);
 					}//if
@@ -528,7 +541,7 @@ public class JPALiteQueryImpl<T> implements Query
 	@SuppressWarnings("unchecked")
 	public T getSingleResult()
 	{
-		Span span = TRACER.spanBuilder("TradeSwitchQueryImpl::getSingleResult").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("JPAQuery::getSingleResult").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			span.setAttribute("resultType", resultClass.getSimpleName());
 
@@ -553,21 +566,13 @@ public class JPALiteQueryImpl<T> implements Query
 					}//if
 
 					if (result instanceof JPAEntity jpaEntity) {
-						//Check if the entity is not already in L1 Cache
-						T l1Entity = (T) persistenceContext.l1Cache().find(jpaEntity.get$$EntityClass(), jpaEntity._getPrimaryKey());
-						if (l1Entity != null) {
-							persistenceContext.l1Cache().detach(jpaEntity);
-							result = l1Entity;
-						}
-						else {
-							if (jpaEntity._getMetaData().isCacheable() && !bypassL2Cache) {
-								persistenceContext.l2Cache().add(jpaEntity);
-							}//if
+						if (jpaEntity._getMetaData().isCacheable() && !bypassL2Cache) {
+							persistenceContext.l2Cache().add(jpaEntity);
+						}//if
 
-							if (isPessimisticLocking(lockMode)) {
-								jpaEntity._setLockMode(lockMode);
-							}//if
-						}//else
+						if (isPessimisticLocking(lockMode)) {
+							jpaEntity._setLockMode(lockMode);
+						}//if
 					}//if
 
 					span.setAttribute("result", "Result found");
@@ -587,7 +592,7 @@ public class JPALiteQueryImpl<T> implements Query
 	@Override
 	public int executeUpdate()
 	{
-		Span span = TRACER.spanBuilder("TradeSwitchQueryImpl::executeUpdate").setSpanKind(SpanKind.SERVER).startSpan();
+		Span span = TRACER.spanBuilder("JPAQuery::executeUpdate").setSpanKind(SpanKind.SERVER).startSpan();
 		try (Scope ignored = span.makeCurrent()) {
 			span.setAttribute(SQL_QUERY, getQuery());
 
@@ -678,7 +683,6 @@ public class JPALiteQueryImpl<T> implements Query
 					lockTimeout = Integer.parseInt(aString);
 				}
 			}
-			case TRADESWITCH_CONNECTION_NAME -> connectionName = value.toString();
 			case PERSISTENCE_CACHE_RETRIEVEMODE -> {
 				if (value instanceof CacheRetrieveMode mode) {
 					bypassL2Cache = CacheRetrieveMode.BYPASS.equals(mode);
@@ -687,7 +691,7 @@ public class JPALiteQueryImpl<T> implements Query
 					bypassL2Cache = CacheRetrieveMode.BYPASS.equals(CacheRetrieveMode.valueOf(value.toString()));
 				}
 			}
-			case JPALITE_SHOW_SQL -> {
+			case PERSISTENCE_SHOW_SQL -> {
 				if (value instanceof Boolean showSqlHint) {
 					this.showSql = showSqlHint;
 				}//if
@@ -695,7 +699,7 @@ public class JPALiteQueryImpl<T> implements Query
 					showSql = Boolean.parseBoolean(value.toString());
 				}
 			}
-			case TRADESWITCH_CACHE_RESULTLIST -> {
+			case PERSISTENCE_CACHE_RESULTLIST -> {
 				EntityMetaData<T> vMetaData = EntityMetaDataManager.getMetaData(resultClass);
 				if (vMetaData.isCacheable()) {
 					cacheResultList = Boolean.parseBoolean(value.toString());
@@ -704,8 +708,8 @@ public class JPALiteQueryImpl<T> implements Query
 					cacheResultList = false;
 				}//else
 			}
-			case TRADESWITCH_ONLY_PRIMARYKEY_USED -> selectUsingPrimaryKey = true;
-			case TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE, TRADESWITCH_OVERRIDE_FETCHTYPE -> {
+			case PERSISTENCE_PRIMARYKEY_USED -> selectUsingPrimaryKey = true;
+			case PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE, PERSISTENCE_OVERRIDE_FETCHTYPE -> {
 				if (value instanceof FetchType fetchType) {
 					hints.put(hintName, fetchType);
 				}//if
@@ -733,7 +737,7 @@ public class JPALiteQueryImpl<T> implements Query
 			  It is illegal to do a "SELECT FOR UPDATE" query that contains joins.
 			  We are forcing the parser to generate a query that do not have any joins.
 			 */
-			hints.put(TRADESWITCH_OVERRIDE_FETCHTYPE, FetchType.LAZY);
+			hints.put(PERSISTENCE_OVERRIDE_FETCHTYPE, FetchType.LAZY);
 		}//if
 
 		try {
@@ -773,12 +777,12 @@ public class JPALiteQueryImpl<T> implements Query
 
 			if (showSql) {
 				LOG.info("\n------------ Query Parser -------------\n" +
-						 "Query language: {}\n" +
-						 "----------- Raw ----------\n" +
-						 "{}\n" +
-						 "---------- Parsed --------\n" +
-						 "{}\n" +
-						 "--------------------------------------",
+								 "Query language: {}\n" +
+								 "----------- Raw ----------\n" +
+								 "{}\n" +
+								 "---------- Parsed --------\n" +
+								 "{}\n" +
+								 "--------------------------------------",
 						 queryLanguage, rawQuery, query);
 			}//if
 		}//try

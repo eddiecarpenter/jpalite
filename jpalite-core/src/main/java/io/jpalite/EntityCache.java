@@ -19,60 +19,38 @@ package io.jpalite;
 
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.Cache;
-import jakarta.transaction.*;
+import jakarta.transaction.SystemException;
 
-import java.util.List;
+import java.time.Instant;
 
 public interface EntityCache extends Cache
 {
 	/**
 	 * Create a new transaction and associate it with the current thread.
 	 *
-	 * @throws jakarta.transaction.NotSupportedException Thrown if the thread is already
-	 *                                                   associated with a transaction and the Transaction Manager
-	 *                                                   implementation does not support nested transactions.
-	 * @throws jakarta.transaction.SystemException       Thrown if the transaction manager
-	 *                                                   encounters an unexpected error condition.
+	 * @throws jakarta.transaction.SystemException Thrown if the transaction manager
+	 *                                             encounters an unexpected error condition.
 	 */
-	public void begin() throws NotSupportedException, SystemException;
+	public void begin() throws SystemException;
 
 	/**
 	 * Complete the transaction associated with the current thread. When this
 	 * method completes, the thread is no longer associated with a transaction.
 	 *
-	 * @throws jakarta.transaction.RollbackException          Thrown to indicate that
-	 *                                                        the transaction has been rolled back rather than committed.
-	 * @throws jakarta.transaction.HeuristicMixedException    Thrown to indicate that a heuristic
-	 *                                                        decision was made and that some relevant updates have been committed
-	 *                                                        while others have been rolled back.
-	 * @throws jakarta.transaction.HeuristicRollbackException Thrown to indicate that a
-	 *                                                        heuristic decision was made and that all relevant updates have been
-	 *                                                        rolled back.
-	 * @throws SecurityException                              Thrown to indicate that the thread is
-	 *                                                        not allowed to commit the transaction.
-	 * @throws IllegalStateException                          Thrown if the current thread is
-	 *                                                        not associated with a transaction.
-	 * @throws SystemException                                Thrown if the transaction manager
-	 *                                                        encounters an unexpected error condition.
+	 * @throws SystemException Thrown if the transaction manager
+	 *                         encounters an unexpected error condition.
 	 */
-	void commit() throws RollbackException,
-						 HeuristicMixedException, HeuristicRollbackException, SecurityException,
-						 IllegalStateException, SystemException;
+	void commit() throws SystemException;
 
 	/**
 	 * Roll back the transaction associated with the current thread. When this
 	 * method completes, the thread is no longer associated with a
 	 * transaction.
 	 *
-	 * @throws SecurityException     Thrown to indicate that the thread is
-	 *                               not allowed to roll back the transaction.
-	 * @throws IllegalStateException Thrown if the current thread is
-	 *                               not associated with a transaction.
-	 * @throws SystemException       Thrown if the transaction manager
-	 *                               encounters an unexpected error condition.
+	 * @throws SystemException Thrown if the transaction manager
+	 *                         encounters an unexpected error condition.
 	 */
-	void rollback() throws IllegalStateException, SecurityException,
-						   SystemException;
+	void rollback() throws SystemException;
 
 	/**
 	 * Search the cache for an entity using the primary key.
@@ -82,17 +60,6 @@ public interface EntityCache extends Cache
 	 * @return the entity or null if not found
 	 */
 	<T> T find(Class<T> entityType, Object primaryKey);
-
-	/**
-	 * Search for the entity in the cache using the where clause
-	 *
-	 * @param entityType
-	 * @param query
-	 * @param <T>
-	 * @return
-	 */
-	@Nonnull
-	<T> List<T> search(Class<T> entityType, String query);
 
 	/**
 	 * Add an entity to the cache.
@@ -106,21 +73,28 @@ public interface EntityCache extends Cache
 	 *
 	 * @param entity The entity to update or add
 	 */
-	void update(JPAEntity entity);
+	void replace(JPAEntity entity);
 
-	/**
-	 * Detach an entity from the cache and mark the entity as DETACHED
-	 *
-	 * @param entity the entity to detach
-	 */
-	void remove(JPAEntity entity);
 
 	/**
 	 * Return the time for when an entity-type was last updated
 	 *
 	 * @param entityType The entity type
-	 * @param <T>
-	 * @return The time since epoch the entity was updated
+	 * @return The instance when the entity was last updated
 	 */
-	<T> long lastModified(Class<T> entityType);
+	@Nonnull
+	<T> Instant getLastModified(Class<T> entityType);
+
+	/**
+	 * Return the time for when an entity-type was last updated
+	 *
+	 * @param entityType The entity type
+	 * @return The time since epoch the entity was updated
+	 * @deprecated Replaced by {{@link #getLastModified(Class)}}
+	 */
+	@Deprecated(forRemoval = true, since = "3.0.0")
+	default <T> long lastModified(Class<T> entityType)
+	{
+		return getLastModified(entityType).toEpochMilli();
+	}
 }

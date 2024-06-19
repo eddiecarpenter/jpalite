@@ -14,55 +14,43 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package io.jpalite.jqpl;
+package io.jpalite.test;
 
 import io.jpalite.impl.JPAEntityImpl;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.sql.Timestamp;
+import java.math.BigDecimal;
 
+/**
+ *
+ */
+@Entity
+@Table(name = "EMPLOYEE")
 @Getter
 @Setter
-@Entity
-@Table(name = "RATE_PLAN")
-public class RatePlan extends JPAEntityImpl
+public class Employee1 extends JPAEntityImpl
 {
+
 	@Id
 	@GeneratedValue
-	@Column(name = "ID", updatable = false)
-	Long id;
+	@Column(name = "IRN")
+	private int id;
 
-	@Column(name = "UID", nullable = false)
-	String uid;
+	@Column(name = "NAME")
+	private String name;
 
-	@Column(name = "RESOURCE_VERSION", nullable = false)
-	long resourceVersion = 0;
+	@Column(name = "AGE")
+	private int age;
 
-	@Column(name = "OPERATOR_ID", nullable = false)
-	long operatorId;
+	@Column(name = "SALARY")
+	@Basic(fetch = FetchType.LAZY)
+	private BigDecimal salary;
 
-	@Column(name = "PLAN_NAME")
-	String name;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "DEPT")
+	private Department1 department;
+}//Employee
 
-	@Column(name = "CREATED_BY", nullable = false)
-	String createdBy;
-
-	@Column(name = "APPROVED_BY")
-	String approvedBy;
-
-	@Column(name = "EFFECTIVE_DATE", nullable = false)
-	Timestamp effectiveDate;
-
-	@Column(name = "RATE_PLAN_CONFIG", nullable = false)
-	String ratePlanConfig;
-
-	@Version
-	@Column(name = "MODIFIED_ON", nullable = false)
-	Timestamp modifiedOn;
-
-	@Column(name = "CREATED_DATE", nullable = false)
-	Timestamp createdDate;
-}
+//--------------------------------------------------------------------[ End ]---

@@ -17,18 +17,55 @@
 
 package io.jpalite;
 
+import io.jpalite.impl.CacheFormat;
 import jakarta.persistence.spi.PersistenceUnitInfo;
-import org.infinispan.commons.configuration.BasicConfiguration;
 
 public interface JPALitePersistenceUnit extends PersistenceUnitInfo
 {
+	/**
+	 * The name of the datasource to associate with persistence unit
+	 *
+	 * @return The datasource name
+	 */
 	String getDataSourceName();
 
-	String getCacheName();
+	/**
+	 * The cache region prefix. If null or blank no prefix will be applied
+	 *
+	 * @return The prefix
+	 */
+	String getCacheRegionPrefix();
 
+	/**
+	 * Retrieves the cache provider for the persistence unit.
+	 *
+	 * @return The cache provider as a string
+	 */
 	String getCacheProvider();
 
-	BasicConfiguration getCacheConfig();
+	/**
+	 * Gets the cache configuration for the persistence unit.
+	 *
+	 * @return The cache configuration as a string
+	 */
+	String getCacheConfig();
+
+
+	/**
+	 * Gets the cache client for the persistence unit.
+	 *
+	 * @return The cache client as a string
+	 */
+	String getCacheClient();
+
+	/**
+	 * Retrieves the cache format for the persistence unit.
+	 *
+	 * @return The cache format for the persistence unit. The possible values are:
+	 * - {@link CacheFormat#BINARY}: Indicates that the cache format is binary.
+	 * - {@link CacheFormat#JSON}: Indicates that the cache format is JSON.
+	 */
+	CacheFormat getCacheFormat();
 
 	Boolean getMultiTenantMode();
 }

@@ -17,35 +17,32 @@
 
 package io.jpalite;
 
-public interface ConverterClass
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.AttributeConverter;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public interface FieldConvertType<X, Y> extends AttributeConverter<X, Y>
 {
-	/**
-	 * The name of the converter
-	 *
-	 * @return The name
-	 */
-	String getName();
-
-	/**
-	 * A check to see if the converter should be auto applied
-	 *
-	 * @return true if auto apply
-	 */
-	boolean isAutoApply();
-
-	/**
-	 * The converter
-	 *
-	 * @return The converter
-	 */
-	//We need to use the raw type here as the converter is not generic
-	@SuppressWarnings("java:S1452")
-	FieldConvertType<?, ?> getConverter();
-
-	/**
-	 * The attribute type
-	 *
-	 * @return The attribute type
-	 */
 	Class<?> getAttributeType();
+
+	void toJson(JsonGenerator jsonGenerator, X value) throws IOException;
+
+	X fromJson(JsonNode json);
+
+	void writeField(Object value, DataOutputStream out) throws IOException;
+
+	X readField(DataInputStream in) throws IOException;
+
+
+	@SuppressWarnings("unchecked")
+	default X convertToEntityAttribute(ResultSet resultSet, int column) throws SQLException
+	{
+		return (resultSet.wasNull() ? null : convertToEntityAttribute((Y) resultSet.getObject(column)));
+	}
 }

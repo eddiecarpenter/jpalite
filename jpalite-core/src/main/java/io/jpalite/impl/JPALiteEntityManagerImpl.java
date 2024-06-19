@@ -79,7 +79,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 		else {
 			opened = null;
 		}//else
-	}//TradeSwitchEntityManagerImpl
+	}//JPALiteEntityManagerImpl
 
 	//<editor-fold desc="Method Entry Checkers">
 	@Override
@@ -793,6 +793,6 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 
 		throw new IllegalArgumentException("Could not unwrap this [" + this + "] as requested Java type [" + cls.getName() + "]");
 	}
-}//TradeSwitchEntityManagerImpl
+}//JPALiteEntityManagerImpl
 
 //--------------------------------------------------------------------[ End ]---

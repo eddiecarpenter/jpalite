@@ -29,8 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The DatabasePoolFactory class is part of the JPALite implementation
- *
- * @see <a href="https://confluence.frei.one/x/_4EEC">TradeSwitch Persistence Manager in Confluence</a>
  */
 public class DatabasePoolFactory
 {

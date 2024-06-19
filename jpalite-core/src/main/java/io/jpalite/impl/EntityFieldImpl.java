@@ -18,6 +18,9 @@
 package io.jpalite.impl;
 
 import io.jpalite.*;
+import io.jpalite.impl.fieldtypes.EnumFieldType;
+import io.jpalite.impl.fieldtypes.ObjectFieldType;
+import io.jpalite.impl.fieldtypes.OrdinalEnumFieldType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -45,87 +48,58 @@ public class EntityFieldImpl implements EntityField
 	private static final boolean NATIVE_IMAGE = ImageInfo.inImageCode();
 	/**
 	 * The entity class
-	 *
-	 * @return the entity class
 	 */
-	private Class<?> enityClass;
+	private final Class<?> enityClass;
 	/**
 	 * Identifier of the entity
-	 *
-	 * @param name changes the name of the entity
-	 * @return name of the client
 	 */
 	private final String name;
 	/**
 	 * A unique field number assigned to the field.
-	 *
-	 * @return the field number
 	 */
 	private final int fieldNr;
 	/**
 	 * The java class of the field
-	 *
-	 * @return the java class
 	 */
 	private Class<?> type;
 	/**
 	 * The type of field as per {@link FieldType}
-	 *
-	 * @return The field type
 	 */
 	private FieldType fieldType;
 	/**
 	 * The SQL column linked to the field
-	 *
-	 * @return The SQL Column name
 	 */
 	private String column;
 	/**
 	 * The mapping type specified by the field. See {@link MappingType}.
-	 *
-	 * @return The {@link MappingType}
 	 */
 	private MappingType mappingType;
 	/**
 	 * True if the field is to be unique in the table
-	 *
-	 * @return the unique setting
 	 */
 	private boolean unique;
 	/**
 	 * True of the field can be null
-	 *
-	 * @return the nullable setting
 	 */
 	private boolean nullable;
 	/**
 	 * True if the field is insertable
-	 *
-	 * @return the insertable setting
 	 */
 	private boolean insertable;
 	/**
 	 * True if the field is updatable.
-	 *
-	 * @return the updatable setting
 	 */
 	private boolean updatable;
 	/**
 	 * True if the field is an ID Field
-	 *
-	 * @return the idField setting
 	 */
 	private boolean idField;
 	/**
 	 * True if the field is a Version Field
-	 *
-	 * @return the version field setting
 	 */
 	private boolean versionField;
 	/**
 	 * The getter for the field
-	 *
-	 * @return the setter method for the field
 	 */
 	private MethodHandle getter;
 	/**
@@ -142,39 +116,29 @@ public class EntityFieldImpl implements EntityField
 	private Method setterMethod;
 	/**
 	 * The {@link CascadeType} assigned to the field.
-	 *
-	 * @return the {@link CascadeType} setting
 	 */
 	private Set<CascadeType> cascade;
 	/**
 	 * The {@link FetchType} assigned to the field.
-	 *
-	 * @return the {@link FetchType} setting
 	 */
 	private FetchType fetchType;
 	/**
 	 * Only applicable to non-Basic fields and indicates that the field is linked the field specified in mappedBy in the
 	 * entity represented by the field.
-	 *
-	 * @return the mappedBy setting
 	 */
 	private String mappedBy;
 	/**
 	 * The columnDefinition value defined in the JoinColumn annotation linked to the field
-	 *
-	 * @return the columnDefinition setting
 	 */
 	private String columnDefinition;
 	/**
 	 * The table value defined in the JoinColumn annotation linked to the field
-	 *
-	 * @return the table setting
 	 */
 	private String table;
 	/**
 	 * The converter class used to convert the field to a SQL type
 	 */
-	private TradeSwitchConvert converterClass;
+	private FieldConvertType<?, ?> converter;
 
 	/**
 	 * Create a new entity field definition
@@ -206,8 +170,11 @@ public class EntityFieldImpl implements EntityField
 		idField = false;
 		versionField = false;
 
-		checkForConvert(field);
+		//The order below is important
 		processMappingType(field);
+
+		findConverter(field);
+
 		findGetterSetter(field);
 	}//EntityField
 
@@ -311,7 +278,7 @@ public class EntityFieldImpl implements EntityField
 				}//if
 				insertable = false;
 				updatable = false;
-			}//ifated
+			}//if
 			nullable = false;
 		}//if
 
@@ -398,7 +365,7 @@ public class EntityFieldImpl implements EntityField
 		return false;
 	}//checkManyToManyField
 
-	private void checkForConvert(Field field)
+	private void findConverter(Field field)
 	{
 		Convert customType = field.getAnnotation(Convert.class);
 		if (customType != null) {
@@ -406,7 +373,7 @@ public class EntityFieldImpl implements EntityField
 				//Check if the converter class was explicitly overridden
 				if (customType.converter() != null) {
 					fieldType = FieldType.TYPE_CUSTOMTYPE;
-					converterClass = (TradeSwitchConvert) customType.converter().getConstructor().newInstance();
+					converter = (FieldConvertType<?, ?>) customType.converter().getConstructor().newInstance();
 					return;
 				}//if
 			}//try
@@ -424,8 +391,31 @@ public class EntityFieldImpl implements EntityField
 		ConverterClass converterClass = EntityMetaDataManager.getConvertClass(type);
 		if (converterClass != null) {
 			fieldType = FieldType.TYPE_CUSTOMTYPE;
-			this.converterClass = converterClass.getConverter();
+			converter = converterClass.getConverter();
 		}//if
+		else {
+			switch (fieldType) {
+				case TYPE_ENUM -> {
+					converter = new EnumFieldType((Class<Enum<?>>) type);
+					fieldType = FieldType.TYPE_CUSTOMTYPE;
+				}
+				case TYPE_ORDINAL_ENUM -> {
+					converter = new OrdinalEnumFieldType((Class<Enum<?>>) type);
+					fieldType = FieldType.TYPE_CUSTOMTYPE;
+				}
+				case TYPE_OBJECT -> {
+					converter = new ObjectFieldType();
+					fieldType = FieldType.TYPE_CUSTOMTYPE;
+				}
+				case TYPE_ENTITY -> {
+					//ignore
+				}
+				default -> LOG.warn("No converter class found for field {} type {}", name, fieldType);
+
+			}
+		}//else
+
+
 	}//checkForConvert
 
 	@Override

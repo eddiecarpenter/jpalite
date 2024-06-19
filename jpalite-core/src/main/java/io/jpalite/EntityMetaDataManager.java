@@ -24,14 +24,13 @@ import jakarta.persistence.PersistenceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -49,33 +48,27 @@ public class EntityMetaDataManager
 		loadEntities();
 	}
 
-	private static int loadEntities()
+	@SuppressWarnings({"rawtypes", "unchecked"})
+	private static void loadEntities()
 	{
 		lock.lock();
 		try {
 			if (!registryLoaded) {
 				try {
+					REGISTRY_CONVERTERS.clear();
+
 					ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
 					long start = System.currentTimeMillis();
-					Enumeration<URL> urls = loader.getResources("META-INF/io.jpalite.converters");
-					while (urls.hasMoreElements()) {
-						URL location = urls.nextElement();
-						try (InputStream inputStream = location.openStream();
-							 BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+					ServiceLoader<FieldConvertType> converterLoader = ServiceLoader.load(FieldConvertType.class);
+					for (FieldConvertType<?, ?> converter : converterLoader) {
+						registerConverter(converter);
+					}
 
-							String line = reader.readLine();
-							while (line != null) {
-								ConverterClass convertClass = new ConverterClassImpl(loader.loadClass(line));
-								REGISTRY_CONVERTERS.put(convertClass.getAttributeType(), convertClass);
-								line = reader.readLine();
-							}//while
-						}//try
-					}//while
 					LOG.info("Loaded {} converters in {}ms", REGISTRY_CONVERTERS.size(), System.currentTimeMillis() - start);
 
 					start = System.currentTimeMillis();
-					urls = loader.getResources("META-INF/persistenceUnits.properties");
+					Enumeration<URL> urls = loader.getResources("META-INF/persistenceUnits.properties");
 					while (urls.hasMoreElements()) {
 						URL location = urls.nextElement();
 						try (InputStream inputStream = location.openStream()) {
@@ -98,11 +91,8 @@ public class EntityMetaDataManager
 					}//while
 					LOG.info("Loaded {} entities in {}ms", REGISTRY_ENTITY_CLASSES.size(), System.currentTimeMillis() - start);
 				}//try
-				catch (ClassNotFoundException ex) {
-					throw new PersistenceException("Error loading converter class", ex);
-				}//catch
 				catch (IOException ex) {
-					throw new PersistenceException("Error reading persistenceUnits.properties or org.tradeswitch.converters", ex);
+					throw new PersistenceException("Error reading persistenceUnits.properties", ex);
 				}//catch
 
 				registryLoaded = true;
@@ -111,8 +101,6 @@ public class EntityMetaDataManager
 		finally {
 			lock.unlock();
 		}
-
-		return REGISTRY_ENTITY_NAMES.size();
 	}//loadEntities
 
 	public static int getEntityCount()
@@ -130,6 +118,14 @@ public class EntityMetaDataManager
 
 		return metaData;
 	}//getMetaData
+
+	public static void registerConverter(@Nonnull FieldConvertType<?, ?> converter)
+	{
+		ConverterClass convertClass = new ConverterClassImpl(converter);
+		if (convertClass.isAutoApply()) {
+			REGISTRY_CONVERTERS.put(convertClass.getAttributeType(), convertClass);
+		}
+	}
 
 	public static void register(@Nonnull EntityMetaData<?> metaData)
 	{

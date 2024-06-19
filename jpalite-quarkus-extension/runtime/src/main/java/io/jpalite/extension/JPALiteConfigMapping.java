@@ -18,6 +18,7 @@
 package io.jpalite.extension;
 
 import io.jpalite.JPALiteEntityManager;
+import io.jpalite.impl.CacheFormat;
 import io.quarkus.runtime.annotations.ConfigDocMapKey;
 import io.quarkus.runtime.annotations.ConfigDocSection;
 import io.quarkus.runtime.annotations.ConfigPhase;
@@ -63,16 +64,27 @@ public interface JPALiteConfigMapping
 		String datasourceName();
 
 		/**
-		 * The name of the 2nd level cache that is to be used
-		 */
-		@WithDefault("L2CACHE")
-		@WithName("cache-name")
-		String cacheName();
-
-		/**
-		 * The name of the 2nd level cache provider that is to be used
+		 * The region prefix to use (second level caching)
 		 */
 		@WithDefault("<default>")
+		@WithName("cache-region-prefix")
+		String cacheRegionPrefix();
+
+		/**
+		 * Retrieves the cache client (infinispan-client, redis-client, etc) to be used by the cache provider.
+		 * Care should be taken to reference a client that is compatible with the cache provider specified.
+		 *
+		 * @return The cache client name as specified in the persistence unit configuration, or the default value if not set.
+		 * @see PersistenceUnitConfig#cacheClient()
+		 */
+		@WithDefault("<default>")
+		@WithName("cache-client")
+		String cacheClient();
+
+		/**
+		 * The name of the 2nd level cache provider that is to be used.
+		 */
+		@WithDefault("io.jpalite.impl.caching.JPALiteInfinispanCache")
 		@WithName("cache-provider")
 		String cacheProvider();
 
@@ -85,6 +97,14 @@ public interface JPALiteConfigMapping
 				"</distributed-cache>")
 		@WithName("cache-config")
 		String cacheConfig();
+
+		/**
+		 * The cache format to use when storing cache entities
+		 */
+		@WithDefault("JSON")
+		@WithName("cache-format")
+		@WithConverter(CacheFormatConverter.class)
+		CacheFormat cacheFormat();
 
 		/**
 		 * Set to TRUE if the persistence unit reference a multi-tenant data source
@@ -129,7 +149,7 @@ public interface JPALiteConfigMapping
 		@Override
 		public PersistenceUnitTransactionType convert(String value) throws IllegalArgumentException, NullPointerException
 		{
-			return PersistenceUnitTransactionType.valueOf(value);
+			return PersistenceUnitTransactionType.valueOf(value.toUpperCase());
 		}
 	}//PersistenceUnitTransactionTypeConverter
 
@@ -138,7 +158,16 @@ public interface JPALiteConfigMapping
 		@Override
 		public SharedCacheMode convert(String value) throws IllegalArgumentException, NullPointerException
 		{
-			return SharedCacheMode.valueOf(value);
+			return SharedCacheMode.valueOf(value.toUpperCase());
+		}
+	}
+
+	class CacheFormatConverter implements Converter<CacheFormat>
+	{
+		@Override
+		public CacheFormat convert(String value) throws IllegalArgumentException, NullPointerException
+		{
+			return CacheFormat.valueOf(value.toUpperCase());
 		}
 	}
 
@@ -147,7 +176,7 @@ public interface JPALiteConfigMapping
 		@Override
 		public ValidationMode convert(String value) throws IllegalArgumentException, NullPointerException
 		{
-			return ValidationMode.valueOf(value);
+			return ValidationMode.valueOf(value.toUpperCase());
 		}
 	}
 

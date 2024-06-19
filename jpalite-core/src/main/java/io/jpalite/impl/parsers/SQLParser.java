@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.jpalite.JPALiteEntityManager.TRADESWITCH_ONLY_PRIMARYKEY_USED;
+import static io.jpalite.JPALiteEntityManager.PERSISTENCE_PRIMARYKEY_USED;
 
 @SuppressWarnings("java:S1452") //generic wildcard is required
 public class SQLParser implements QueryParser
@@ -72,8 +72,8 @@ public class SQLParser implements QueryParser
 		usingNamedParameters = false;
 		queryParameters = new ArrayList<>();
 
-		if (queryHints.containsKey(TRADESWITCH_ONLY_PRIMARYKEY_USED)) {
-			selectUsingPrimaryKey = Boolean.parseBoolean(queryHints.get(TRADESWITCH_ONLY_PRIMARYKEY_USED).toString());
+		if (queryHints.containsKey(PERSISTENCE_PRIMARYKEY_USED)) {
+			selectUsingPrimaryKey = Boolean.parseBoolean(queryHints.get(PERSISTENCE_PRIMARYKEY_USED).toString());
 		}//if
 
 		query = processSQLParameterLabels(rawQuery);

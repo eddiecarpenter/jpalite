@@ -156,7 +156,7 @@ public interface JPAEntity extends Serializable
 	void _setPendingAction(PersistenceAction pendingAction);
 
 	/**
-	 * Get the current value of a specific field.
+	 * Get the value of a specific field converted to database format
 	 *
 	 * @param fieldName The field name
 	 * @return The value assigned to the value
@@ -301,6 +301,19 @@ public interface JPAEntity extends Serializable
 	 * @return the serialised object
 	 */
 	byte[] _serialize();
+
+	/**
+	 * Retrieve content of the JPAEntity as a JSON formatted string*
+	 */
+	String _toJson();
+
+	/**
+	 * Load the entity from a JSON string
+	 *
+	 * @param jsonStr The json string
+	 */
+	void _fromJson(String jsonStr);
+
 
 	/**
 	 * Compare the primary keys of the to entities

@@ -96,10 +96,10 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 
 		IdClass idClass = entityClass.getAnnotation(IdClass.class);
 		if (idClass != null) {
-
 			if (!EntityMetaDataManager.isRegistered(idClass.value())) {
+				//TODO: Added support for @EmbeddedId and fix implementation of @IdClass
 				primaryKey = new EntityMetaDataImpl(idClass.value());
-				((EntityMetaDataImpl) primaryKey).entityType = EntityType.ENTITY_IDCLASS;
+				((EntityMetaDataImpl<?>) primaryKey).entityType = EntityType.ENTITY_IDCLASS;
 				EntityMetaDataManager.register(primaryKey);
 			}//if
 
@@ -109,7 +109,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 		}//if
 
 		versionField = null;
-		StringBuilder stringBuilder = new StringBuilder("");
+		StringBuilder stringBuilder = new StringBuilder();
 		for (Field vField : entityClass.getDeclaredFields()) {
 			if (!Modifier.isStatic(vField.getModifiers()) &&
 					!Modifier.isFinal(vField.getModifiers()) &&
@@ -195,64 +195,6 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 		}//else
 		return "[" + entityName + "] Metadata -> Type:" + entityType + ", Entity Class:" + entityClass.getName() + ", Primary Key Class:" + primKeyClass;
 	}//toString
-
-	@Override
-	public String getProtoFile()
-	{
-		StringBuilder protoFile = new StringBuilder("// File name: ")
-				.append(getName()).append(".proto\n")
-				.append("// Generated from : ")
-				.append(getClass().getName())
-				.append("\n")
-				.append("syntax = \"proto2\";\n")
-				.append("package org.tradeswitch;\n");
-
-		Set<String> protoLibs = new HashSet<>();
-		entityFields.values().stream()
-				.filter(f -> f.getFieldType() == FieldType.TYPE_CUSTOMTYPE &&
-						f.getConverterClass().prototypeLib() != null &&
-						!f.getConverterClass().prototypeLib().isBlank())
-				.forEach(f -> protoLibs.add(f.getConverterClass().prototypeLib()));
-
-		protoLibs.forEach(lib -> protoFile.append("import \"").append(lib).append("\";\n"));
-
-		protoFile.append("message ")
-				.append(entityClass.getSimpleName())
-				.append("{\n");
-
-		for (EntityField field : entityFields.values()) {
-			protoFile.append("\t")
-					.append(field.isNullable() ? "optional " : "required ");
-
-			switch (field.getFieldType()) {
-				case TYPE_ENTITY -> {
-					EntityMetaData<?> vMetaData = EntityMetaDataManager.getMetaData(field.getType());
-					if (vMetaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
-						if (!vMetaData.isCacheable()) {
-							throw new EntityMapException("Entity " + getName() + " is marked as cacheable but embeddable " + vMetaData.getName() + " to not marked as cacheable");
-						}//if
-						protoFile.append(field.getType().getSimpleName());
-					}//if
-					else {
-						protoFile.append(vMetaData.getIdField().getFieldType().getProtoType());
-					}//else
-				}//case
-				case TYPE_ENUM -> protoFile.append("string");
-				case TYPE_ORDINAL_ENUM -> protoFile.append("uint32");
-				case TYPE_CUSTOMTYPE -> protoFile.append(field.getConverterClass().getFieldType());
-				default -> protoFile.append(field.getFieldType().getProtoType());
-			}//switch
-
-			protoFile.append(" ")
-					.append(field.getName())
-					.append(" = ")
-					.append(field.getFieldNr())
-					.append(";\n");
-		}//for
-		protoFile.append("}\n");
-
-		return protoFile.toString();
-	}//getProtoFile
 
 	@Override
 	public EntityType getEntityType()
@@ -411,7 +353,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 
 	@Override
 	@Nullable
-	public EntityMetaData<?> getIPrimaryKeyMetaData()
+	public EntityMetaData<?> getPrimaryKeyMetaData()
 	{
 		return primaryKey;
 	}//getIPrimaryKeyMetaData
@@ -430,6 +372,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 	}//getIdFields
 
 	@Override
+	@Deprecated
 	public String getColumns()
 	{
 		return columns;

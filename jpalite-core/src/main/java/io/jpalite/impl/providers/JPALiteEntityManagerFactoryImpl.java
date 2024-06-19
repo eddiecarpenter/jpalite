@@ -19,9 +19,9 @@ package io.jpalite.impl.providers;
 
 import io.jpalite.PersistenceContext;
 import io.jpalite.*;
-import io.jpalite.impl.EntityL2CacheImpl;
 import io.jpalite.impl.JPAConfig;
 import io.jpalite.impl.JPALiteEntityManagerImpl;
+import io.jpalite.impl.caching.EntityCacheImpl;
 import io.jpalite.impl.db.DatabasePoolFactory;
 import jakarta.persistence.*;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
-import static io.jpalite.JPALiteEntityManager.JPALITE_SHOW_SQL;
 import static io.jpalite.JPALiteEntityManager.PERSISTENCE_QUERY_LOG_SLOWTIME;
+import static io.jpalite.JPALiteEntityManager.PERSISTENCE_SHOW_SQL;
 import static io.jpalite.PersistenceContext.PERSISTENCE_JTA_MANAGED;
 
 @SuppressWarnings("unchecked")
@@ -100,9 +100,8 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 			}//if
 		}//for
 
-		LOG.warn(String.format("No PersistenceUnit was found for '%s'. %d SPI services found implementing PersistenceUnitProvider.class.",
-							   persistenceUnitName, loader.stream().count()));
-		return null;
+		throw new PersistenceUnitNotFoundException(String.format("No PersistenceUnit was found for '%s'. %d SPI services found implementing PersistenceUnitProvider.class.",
+																 persistenceUnitName, loader.stream().count()));
 	}//getPersistenceUnit
 
 	private PersistenceContext getPersistenceContext(SynchronizationType synchronizationType, Map<String, Object> properties) throws SQLException
@@ -118,7 +117,7 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 		localProperties.putAll(properties);
 		localProperties.put(PERSISTENCE_JTA_MANAGED, synchronizationType == SynchronizationType.SYNCHRONIZED);
 		localProperties.putIfAbsent(PERSISTENCE_QUERY_LOG_SLOWTIME, defaultSlowQueryTime);
-		localProperties.putIfAbsent(JPALITE_SHOW_SQL, defaultShowQueries);
+		localProperties.putIfAbsent(PERSISTENCE_SHOW_SQL, defaultShowQueries);
 
 		return databasePool.getPersistenceContext(persistenceUnit);
 	}//getPersistenceContext
@@ -167,7 +166,7 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 	@Override
 	public Cache getCache()
 	{
-		return new EntityL2CacheImpl(getPersistenceUnit());
+		return new EntityCacheImpl(getPersistenceUnit());
 	}//getCache
 
 	@Override
@@ -181,7 +180,7 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 					return jpaEntity;
 				}//if
 
-				throw new IllegalStateException(entity.getClass().getName() + " is not a TradeSwitch Entity");
+				throw new IllegalStateException(entity.getClass().getName() + " is not a JPA Entity");
 			}//checkEntity
 
 			@Override

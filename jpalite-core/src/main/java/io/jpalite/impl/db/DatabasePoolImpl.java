@@ -35,9 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static io.jpalite.PersistenceContext.PERSISTENCE_JTA_MANAGED;
 
 /**
- * The DatabasePoolImpl class is part of the TradeSwitch JPA implementation
- *
- * @see <a href="https://confluence.frei.one/x/_4EEC">TradeSwitch Persistence Manager in Confluence</a>
+ * The DatabasePoolImpl class is part of the JPA implementation
  */
 public class DatabasePoolImpl implements DatabasePool
 {

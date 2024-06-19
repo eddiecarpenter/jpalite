@@ -30,9 +30,9 @@ import java.util.Map;
 public interface PersistenceContext extends EntityTransaction, AutoCloseable
 {
 	/**
-	 * The tradeswitch.persistence.jta hint is used to indicated that the transaction management is done via JTA.
+	 * The jpalite.persistence.jta hint is used to signal the transaction management under JTA control.
 	 */
-	String PERSISTENCE_JTA_MANAGED = "tradeswitch.persistence.jta";
+	String PERSISTENCE_JTA_MANAGED = "jpalite.persistence.jta";
 
 	/**
 	 * The method is used to retrieve the persistence unit used to create the context

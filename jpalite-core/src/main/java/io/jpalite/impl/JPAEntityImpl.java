@@ -17,18 +17,20 @@
 
 package io.jpalite.impl;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.jpalite.PersistenceContext;
 import io.jpalite.*;
 import io.jpalite.impl.queries.JPALiteQueryImpl;
 import io.jpalite.impl.queries.QueryImpl;
-import io.jpalite.impl.serializers.JPAEntityMarshaller;
 import io.jpalite.queries.QueryLanguage;
 import jakarta.annotation.Nonnull;
 import jakarta.persistence.*;
 import jakarta.persistence.spi.LoadState;
-import org.infinispan.protostream.FileDescriptorSource;
-import org.infinispan.protostream.GeneratedSchema;
-import org.infinispan.protostream.SerializationContext;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
@@ -43,7 +45,7 @@ import java.util.function.Consumer;
 import static jakarta.persistence.LockModeType.*;
 
 /**
- * This class will be made the super class of all entity classes defined and managed by the TradeSwitch Entity Manager.
+ * This class will be made the super class of all entity classes defined and managed by the Entity Manager.
  * <p>
  * The JPA Maven plugin class will modify the bytecode of all entity classes change the super class to piont to
  * this class.
@@ -54,7 +56,7 @@ import static jakarta.persistence.LockModeType.*;
  * using here ;-) )
  */
 @SuppressWarnings({"java:S100", "java:S116"})
-public class JPAEntityImpl implements JPAEntity, GeneratedSchema
+public class JPAEntityImpl implements JPAEntity
 {
 	public static final String SELECT_CLAUSE = "select ";
 	public static final String FROM_CLAUSE = " from ";
@@ -428,7 +430,6 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		_setPrimaryKey(primaryKey);
 		_markLazyLoaded();
 		_clearModified();
-		_setPendingAction(PersistenceAction.NONE);
 	}//_makeReference
 
 	@Override
@@ -632,7 +633,7 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		}//if
 
 		return (X) switch (entityField.getFieldType()) {
-			case TYPE_CUSTOMTYPE -> entityField.getConverterClass().convertToDatabaseColumn(value);
+			case TYPE_CUSTOMTYPE -> entityField.getConverter().convertToDatabaseColumn(value);
 			case TYPE_ENUM -> ((Enum<?>) value).name();
 			case TYPE_ORDINAL_ENUM -> ((Enum<?>) value).ordinal();
 
@@ -693,7 +694,7 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		}//if
 
 		if ($$metadata.getIdFields().size() > 1) {
-			EntityMetaData<?> primaryKey = $$metadata.getIPrimaryKeyMetaData();
+			EntityMetaData<?> primaryKey = $$metadata.getPrimaryKeyMetaData();
 			Object primKey = null;
 			if (primaryKey != null) {
 				primKey = primaryKey.getNewEntity();
@@ -722,7 +723,7 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 
 
 		if ($$metadata.getIdFields().size() > 1) {
-			EntityMetaData<?> primaryKeyMetaData = $$metadata.getIPrimaryKeyMetaData();
+			EntityMetaData<?> primaryKeyMetaData = $$metadata.getPrimaryKeyMetaData();
 			if (primaryKeyMetaData == null) {
 				throw new IllegalStateException("Missing IDClass for Entity [" + $$metadata.getName() + "]");
 			}//if
@@ -776,7 +777,7 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 
 	protected Object _JPAReadCustomType(ResultSet resultSet, EntityField field, int column) throws SQLException
 	{
-		return field.getConverterClass().convertToEntityAttribute(resultSet, column);
+		return field.getConverter().convertToEntityAttribute(resultSet, column);
 	}//_JPAReadCustomType
 
 	private Object _JPAReadENUM(EntityField field, ResultSet row, int column) throws SQLException
@@ -799,33 +800,37 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 
 	public JPAEntity _JPAReadEntity(EntityField field, ResultSet resultSet, String colPrefix, int col) throws SQLException
 	{
-		EntityMetaData<?> fieldMetaData = EntityMetaDataManager.getMetaData(field.getType());
-
-		//Read the primary key of the field and then check if the entity is not already managed
-		JPAEntity entity = (JPAEntity) fieldMetaData.getNewEntity();
-		entity._setPersistenceContext(_getPersistenceContext());
-		((JPAEntityImpl) entity)._JPAReadField(resultSet, fieldMetaData.getIdField(), colPrefix, col);
-
 		JPAEntity managedEntity = null;
-		if (entity._getPrimaryKey() != null) {
-			if (_getPersistenceContext() != null) {
-				managedEntity = (JPAEntity) _getPersistenceContext().l1Cache().find(fieldMetaData.getEntityClass(), entity._getPrimaryKey(), true);
-			}//if
 
-			if (managedEntity == null) {
-				if (field.getFetchType() == FetchType.LAZY && (colPrefix == null || colPrefix.equals(resultSet.getMetaData().getColumnName(col)))) {
-					entity._markLazyLoaded();
-				}//if
-				else {
-					entity._mapResultSet(colPrefix, resultSet);
-				}//else
+		//Read the field so that wasNull() can be used
+		resultSet.getObject(col);
+		if (!field.isNullable() || !resultSet.wasNull()) {
+			EntityMetaData<?> fieldMetaData = EntityMetaDataManager.getMetaData(field.getType());
+			//Read the primary key of the field and then check if the entity is not already managed
+			JPAEntity entity = (JPAEntity) fieldMetaData.getNewEntity();
+			entity._setPersistenceContext(_getPersistenceContext());
 
+			((JPAEntityImpl) entity)._JPAReadField(resultSet, fieldMetaData.getIdField(), colPrefix, col);
+			if (entity._getPrimaryKey() != null) {
 				if (_getPersistenceContext() != null) {
-					_getPersistenceContext().l1Cache().manage(entity);
+					managedEntity = (JPAEntity) _getPersistenceContext().l1Cache().find(fieldMetaData.getEntityClass(), entity._getPrimaryKey(), true);
 				}//if
-				return entity;
+
+				if (managedEntity == null) {
+					if (field.getFetchType() == FetchType.LAZY && (colPrefix == null || colPrefix.equals(resultSet.getMetaData().getColumnName(col)))) {
+						entity._markLazyLoaded();
+					}//if
+					else {
+						entity._mapResultSet(colPrefix, resultSet);
+					}//else
+
+					if (_getPersistenceContext() != null) {
+						_getPersistenceContext().l1Cache().manage(entity);
+					}//if
+					return entity;
+				}//if
 			}//if
-		}//if
+		}
 
 		return managedEntity;
 	}//_JPAReadEntity
@@ -840,18 +845,20 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 				case TYPE_INTEGER -> field.invokeSetter(this, _JPAReadInteger(row, columnNr));
 				case TYPE_LONGLONG -> field.invokeSetter(this, _JPAReadLong(row, columnNr));
 				case TYPE_DOUBLEDOUBLE -> field.invokeSetter(this, _JPAReadDouble(row, columnNr));
+
 				case TYPE_BOOL -> field.invokeSetter(this, row.getBoolean(columnNr));
 				case TYPE_INT -> field.invokeSetter(this, row.getInt(columnNr));
 				case TYPE_LONG -> field.invokeSetter(this, row.getLong(columnNr));
 				case TYPE_DOUBLE -> field.invokeSetter(this, row.getDouble(columnNr));
+
 				case TYPE_STRING -> field.invokeSetter(this, _JPAReadString(row, columnNr));
 				case TYPE_TIMESTAMP -> field.invokeSetter(this, row.getTimestamp(columnNr));
 				case TYPE_LOCALTIME -> field.invokeSetter(this, _JPAReadLocalDateTime(row, columnNr));
-				case TYPE_CUSTOMTYPE -> field.invokeSetter(this, _JPAReadCustomType(row, field, columnNr));
 				case TYPE_ENUM -> field.invokeSetter(this, _JPAReadENUM(field, row, columnNr));
 				case TYPE_ORDINAL_ENUM -> field.invokeSetter(this, _JPAReadOrdinalENUM(field, row, columnNr));
 				case TYPE_BYTES -> field.invokeSetter(this, row.getBytes(columnNr));
 				case TYPE_OBJECT -> field.invokeSetter(this, row.getObject(columnNr));
+				case TYPE_CUSTOMTYPE -> field.invokeSetter(this, _JPAReadCustomType(row, field, columnNr));
 				case TYPE_ENTITY -> {
 					if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
 						field.invokeSetter(this, _JPAReadEntity(field, row, colPrefix, columnNr));
@@ -905,27 +912,193 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		catch (Exception ex) {
 			throw new EntityMapException("Error extracting the ResultSet Metadata", ex);
 		}//catch
-	}//_maresultSet
+	}//_mapResultSet
 
-	private void writeObjects(ObjectOutput outStream) throws IOException
+	private void writeFields(DataOutputStream out) throws IOException
 	{
 		Collection<EntityField> fieldList = $$metadata.getEntityFields();
-		outStream.writeShort(fieldList.size());
 		for (EntityField field : fieldList) {
 			Object value = field.invokeGetter(this);
-			outStream.writeUTF(field.getName());
-			outStream.writeObject(value);
+			if (value != null) {
+				out.writeShort(field.getFieldNr());
+				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+					EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
+					if (metaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
+						((JPAEntityImpl) value).writeFields(out);
+					}//if
+					else {
+						Object primaryKey = ((JPAEntity) value)._getPrimaryKey();
+						//If the entity has multiple keys, then that primary key will be stored in an embedded object
+						if (primaryKey instanceof JPAEntity primaryKeyEntity) {
+							((JPAEntityImpl) primaryKeyEntity).writeFields(out);
+						}//if
+						else {
+							EntityField keyField = metaData.getIdField();
+							out.writeShort(keyField.getFieldNr());
+							keyField.getConverter().writeField(primaryKey, out);
+							out.writeShort(0); //End of entity
+						}//else
+					}//else
+				}
+				else {
+					field.getConverter().writeField(value, out);
+				}//else
+			}//if
 		}//for
-	}//writeObjects
+		out.writeShort(0); //End of stream indicator
+	}//writeFields
+
+
+	private void readFields(DataInputStream in) throws IOException
+	{
+		int fieldNr = in.readShort();
+		while (fieldNr > 0) {
+			EntityField field = $$metadata.getEntityFieldByNr(fieldNr);
+
+			if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+				EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
+
+				JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
+				entity.readFields(in);
+				if (metaData.getEntityType() == EntityType.ENTITY_DATABASE) {
+					entity._markLazyLoaded();
+				}
+				field.invokeSetter(this, entity);
+			}
+			else {
+				field.invokeSetter(this, field.getConverter().readField(in));
+			}
+
+			fieldNr = in.readShort();
+		}//while
+
+		_clearModified();
+	}//readFields
+
+
+	@SuppressWarnings("unchecked")
+	private void generateJson(JsonGenerator jsonGenerator) throws IOException
+	{
+		jsonGenerator.writeStartObject();
+
+		Collection<EntityField> fieldList = $$metadata.getEntityFields();
+		for (EntityField field : fieldList) {
+			Object value = field.invokeGetter(this);
+			if (!field.isNullable() || value != null) {
+				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+					if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
+						jsonGenerator.writeFieldName(field.getName());
+						if (value == null) {
+							jsonGenerator.writeNull();
+						}
+						else {
+
+							EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
+							if (metaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
+								((JPAEntityImpl) value).generateJson(jsonGenerator);
+							}//if
+							else {
+								Object primaryKey = ((JPAEntity) value)._getPrimaryKey();
+								//If the entity has multiple keys, then that primary key will be stored in an embedded object
+								if (primaryKey instanceof JPAEntity primaryKeyEntity) {
+									((JPAEntityImpl) primaryKeyEntity).generateJson(jsonGenerator);
+								}//if
+								else {
+									EntityField keyField = metaData.getIdField();
+									jsonGenerator.writeStartObject();
+									jsonGenerator.writeFieldName(keyField.getName());
+									keyField.getConverter().toJson(jsonGenerator, primaryKey);
+									jsonGenerator.writeEndObject();
+								}//else
+							}//else
+						}//else
+					}//if
+				}//if
+				else {
+					jsonGenerator.writeFieldName(field.getName());
+					if (value == null) {
+						jsonGenerator.writeNull();
+					}
+					else {
+						field.getConverter().toJson(jsonGenerator, value);
+					}
+				}//else
+			}//if
+		}//for
+		jsonGenerator.writeEndObject();
+	}//_toJson
+
+	@Override
+	public String _toJson()
+	{
+		try {
+			ObjectMapper mapper = new ObjectMapper(JsonFactory.builder().build());
+			mapper.registerModule(new JavaTimeModule());
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			JsonGenerator jsonGenerator = mapper
+					.writerWithDefaultPrettyPrinter()
+					.createGenerator(outputStream);
+
+			generateJson(jsonGenerator);
+			jsonGenerator.close();
+			return outputStream.toString();
+		}
+		catch (IOException ex) {
+			throw new CachingException("Error generating json structure for entity [" + this._getMetaData().getName() + "]", ex);
+		}
+	}
+
+	private void _fromJson(JsonNode jsonNode)
+	{
+		Iterator<Map.Entry<String, JsonNode>> iter = jsonNode.fields();
+
+		while (iter.hasNext()) {
+			Map.Entry<String, JsonNode> node = iter.next();
+
+			EntityField field = $$metadata.getEntityField(node.getKey());
+			if (node.getValue().isNull()) {
+				field.invokeSetter(this, null);
+			}
+			else {
+				if (field.getFieldType() == FieldType.TYPE_ENTITY) {
+					EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
+
+					JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
+					entity._fromJson(node.getValue());
+
+					if (metaData.getEntityType() == EntityType.ENTITY_DATABASE) {
+						entity._markLazyLoaded();
+					}
+					field.invokeSetter(this, entity);
+				}
+				else {
+					field.invokeSetter(this, field.getConverter().fromJson(node.getValue()));
+				}
+			}//else
+		}
+		_clearModified();
+	}
+
+	public void _fromJson(String jsonStr)
+	{
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode nodes = mapper.readTree(jsonStr);
+			_fromJson(nodes);
+		}
+		catch (JsonProcessingException ex) {
+			throw new PersistenceException("Error parsing json text string", ex);
+		}
+	}
 
 	@Override
 	public byte[] _serialize()
 	{
 		try {
 			ByteArrayOutputStream recvOut = new ByteArrayOutputStream();
-			ObjectOutputStream stream = new ObjectOutputStream(recvOut);
-			writeObjects(stream);
-			stream.flush();
+			DataOutputStream out = new DataOutputStream(recvOut);
+			writeFields(out);
+			out.flush();
 
 			return recvOut.toByteArray();
 		}//try
@@ -934,29 +1107,15 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 		}//catch
 	}//_serialise
 
-	@SuppressWarnings("java:S112") // Throwable is correct
-	private void readObjects(ObjectInput inputStream) throws Throwable
-	{
-		int nrItems = inputStream.readShort();
-		while (nrItems > 0) {
-			nrItems--;
-			String fieldName = inputStream.readUTF();
-			EntityField field = $$metadata.getEntityField(fieldName);
-			field.invokeSetter(this, inputStream.readObject());
-		}//while
-	}//readObjects
-
 	@Override
 	public void _deserialize(byte[] bytes)
 	{
 		try {
 			ByteArrayInputStream recvOut = new ByteArrayInputStream(bytes);
-			ObjectInputStream stream = new ObjectInputStream(recvOut);
-			readObjects(stream);
-
-			_clearModified();
+			DataInputStream in = new DataInputStream(recvOut);
+			readFields(in);
 		}//try
-		catch (Throwable ex) {
+		catch (IOException ex) {
 			throw new PersistenceException("Error de-serialising the entity", ex);
 		}//catch
 	}//_deserialize
@@ -966,42 +1125,5 @@ public class JPAEntityImpl implements JPAEntity, GeneratedSchema
 	{
 		return (entity._getMetaData().getEntityClass().equals(_getMetaData().getEntityClass()) &&
 				entity._getPrimaryKey().equals(_getPrimaryKey()));
-	}
-
-	@Override
-	public String getProtoFileName()
-	{
-		return getClass().getSimpleName() + ".proto";
-	}
-
-	@Override
-	public String getProtoFile() throws UncheckedIOException
-	{
-		return _getMetaData().getProtoFile();
-	}
-
-	@Override
-	public void registerSchema(SerializationContext serCtx)
-	{
-		/*
-		 * Register the marshals and schemas for converter classes if not already registered
-		 */
-		_getMetaData().getEntityFields().stream()
-				.filter(f -> f.getFieldType() == FieldType.TYPE_CUSTOMTYPE &&
-							 f.getConverterClass().prototypeLib() != null &&
-							 !f.getConverterClass().prototypeLib().isBlank() &&
-							 !serCtx.canMarshall(f.getConverterClass().prototypeLib()))
-				.forEach(f -> {
-					f.getConverterClass().getSchema().registerSchema(serCtx);
-					f.getConverterClass().getSchema().registerMarshallers(serCtx);
-				});
-
-		serCtx.registerProtoFiles(FileDescriptorSource.fromString(getProtoFileName(), getProtoFile()));
-	}
-
-	@Override
-	public void registerMarshallers(SerializationContext serCtx)
-	{
-		serCtx.registerMarshaller(new JPAEntityMarshaller<>(getClass()));
 	}
 }//JPAEntityImpl

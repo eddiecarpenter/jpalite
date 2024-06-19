@@ -14,29 +14,47 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
-package io.jpalite.jqpl;
+package io.jpalite.test;
 
 import io.jpalite.impl.JPAEntityImpl;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+import java.util.List;
+
+/**
+ *
+ */
 @Entity
-@Table(name = "PHONE")
+@Table(name = "EMPLOYEE")
 @Getter
 @Setter
-public class Phone extends JPAEntityImpl
+public class Employee extends JPAEntityImpl
 {
+
 	@Id
 	@GeneratedValue
 	@Column(name = "IRN")
 	private int id;
 
-	@Column(name = "NUM")
-	private String number;
+	@Embedded
+	private FullName fullName;
+
+	@Column(name = "AGE")
+	private int age;
+
+	@Column(name = "SALARY")
+	@Basic(fetch = FetchType.LAZY)
+	private BigDecimal salary;
 
 	@ManyToOne
-	@JoinColumn(name = "EMPL")
-	private Employee employee;
-}//Phone
+	@JoinColumn(name = "DEPT", nullable = false)
+	private Department department;
+
+	@OneToMany(mappedBy = "employee")
+	private List<Phone> phones;
+}//Employee
+
+//--------------------------------------------------------------------[ End ]---

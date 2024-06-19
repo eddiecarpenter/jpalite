@@ -25,8 +25,8 @@ import jakarta.persistence.PersistenceException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static io.jpalite.JPALiteEntityManager.TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE;
-import static io.jpalite.JPALiteEntityManager.TRADESWITCH_OVERRIDE_FETCHTYPE;
+import static io.jpalite.JPALiteEntityManager.PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE;
+import static io.jpalite.JPALiteEntityManager.PERSISTENCE_OVERRIDE_FETCHTYPE;
 
 public class QueryParserFactory
 {
@@ -37,7 +37,7 @@ public class QueryParserFactory
 	}
 
 	/**
-	 * Factory for query parsers used in TradeSwitch JPA
+	 * Factory for query parsers used in JPA Lite
 	 *
 	 * @param rawQuery   The JQPL query
 	 * @param queryHints The query hints
@@ -47,8 +47,8 @@ public class QueryParserFactory
 		/*
 		 * If we override the fetching definition on the entity, we need to reparse the query.
 		 */
-		FetchType overrideFetch = (FetchType) queryHints.get(TRADESWITCH_OVERRIDE_FETCHTYPE);
-		FetchType overrideBasicFetch = (FetchType) queryHints.get(TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE);
+		FetchType overrideFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_FETCHTYPE);
+		FetchType overrideBasicFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE);
 		String cacheKey = rawQuery +
 				language +
 				((overrideFetch == null) ? "NONE" : overrideFetch) +

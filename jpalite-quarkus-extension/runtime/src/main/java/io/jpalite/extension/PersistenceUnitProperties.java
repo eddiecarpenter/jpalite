@@ -22,7 +22,6 @@ import io.smallrye.config.SmallRyeConfig;
 import jakarta.persistence.PersistenceException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.infinispan.commons.configuration.StringConfiguration;
 
 public class PersistenceUnitProperties extends CustomPersistenceUnit
 {
@@ -43,11 +42,13 @@ public class PersistenceUnitProperties extends CustomPersistenceUnit
 		setMultiTenantMode(unitConfig.multiTenant());
 		setTransactionType(unitConfig.transactionType());
 		setDataSourceName(unitConfig.datasourceName());
-		setCacheName(unitConfig.cacheName());
+		setCacheRegionPrefix(unitConfig.cacheRegionPrefix());
+		setCacheFormat(unitConfig.cacheFormat());
 		setSharedCacheMode(unitConfig.sharedCacheMode());
 		setValidationMode(unitConfig.validationMode());
+		setCacheClient(unitConfig.cacheClient());
 		setCacheProvider(unitConfig.cacheProvider());
-		setCacheConfig(new StringConfiguration(unitConfig.cacheConfig()));
+		setCacheConfig(unitConfig.cacheConfig());
 	}//PersistenceUnitProperties
 
 }//PersistenceUnitProperties

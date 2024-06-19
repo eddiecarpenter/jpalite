@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package io.jpalite.jqpl;
+package io.jpalite.test;
 
 import io.jpalite.impl.JPAEntityImpl;
 import jakarta.persistence.*;
@@ -23,16 +23,20 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "COMPANY")
+@Table(name = "PHONE")
 @Getter
 @Setter
-public class Company extends JPAEntityImpl
+public class Phone extends JPAEntityImpl
 {
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	@Column(name = "IRN", updatable = false)
-	private long id;
+	@GeneratedValue
+	@Column(name = "IRN")
+	private int id;
 
-	@Column(name = "NAME")
-	private String name;
-}//Company
+	@Column(name = "NUM")
+	private String number;
+
+	@ManyToOne
+	@JoinColumn(name = "EMPL")
+	private Employee employee;
+}//Phone

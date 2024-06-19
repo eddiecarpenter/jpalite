@@ -24,7 +24,6 @@ import jakarta.persistence.ValidationMode;
 import jakarta.persistence.spi.ClassTransformer;
 import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import lombok.Setter;
-import org.infinispan.commons.configuration.BasicConfiguration;
 
 import javax.sql.DataSource;
 import java.net.URL;
@@ -40,9 +39,11 @@ public class CustomPersistenceUnit implements JPALitePersistenceUnit
 
 	private Boolean multiTenantMode = false;
 	private String dataSourceName;
-	private String cacheName;
+	private String cacheRegionPrefix;
+	private String cacheClient;
 	private String cacheProvider;
-	private BasicConfiguration cacheConfig;
+	private String cacheConfig;
+	private CacheFormat cacheFormat;
 	private String providerClass = JPALitePersistenceProviderImpl.class.getName();
 	private PersistenceUnitTransactionType transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
 	private ValidationMode validationMode = ValidationMode.NONE;
@@ -61,9 +62,9 @@ public class CustomPersistenceUnit implements JPALitePersistenceUnit
 	}
 
 	@Override
-	public String getCacheName()
+	public String getCacheRegionPrefix()
 	{
-		return cacheName;
+		return cacheRegionPrefix;
 	}
 
 	@Override
@@ -73,9 +74,21 @@ public class CustomPersistenceUnit implements JPALitePersistenceUnit
 	}
 
 	@Override
-	public BasicConfiguration getCacheConfig()
+	public String getCacheClient()
+	{
+		return cacheClient;
+	}
+
+	@Override
+	public String getCacheConfig()
 	{
 		return cacheConfig;
+	}
+
+	@Override
+	public CacheFormat getCacheFormat()
+	{
+		return cacheFormat;
 	}
 
 	@Override

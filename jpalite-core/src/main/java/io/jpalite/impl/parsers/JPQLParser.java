@@ -177,12 +177,12 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 		usingNamedParameters = false;
 		queryParameters = new ArrayList<>();
 
-		if (queryHints.get(JPALiteEntityManager.TRADESWITCH_OVERRIDE_FETCHTYPE) != null) {
-			overrideAllFetchType = (FetchType) queryHints.get(JPALiteEntityManager.TRADESWITCH_OVERRIDE_FETCHTYPE);
+		if (queryHints.get(JPALiteEntityManager.PERSISTENCE_OVERRIDE_FETCHTYPE) != null) {
+			overrideAllFetchType = (FetchType) queryHints.get(JPALiteEntityManager.PERSISTENCE_OVERRIDE_FETCHTYPE);
 		}//if
 
-		if (queryHints.get(JPALiteEntityManager.TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE) != null) {
-			overrideBasicFetchType = (FetchType) queryHints.get(JPALiteEntityManager.TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE);
+		if (queryHints.get(JPALiteEntityManager.PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE) != null) {
+			overrideBasicFetchType = (FetchType) queryHints.get(JPALiteEntityManager.PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE);
 		}//if
 
 		try {

@@ -15,33 +15,24 @@
  *  limitations under the License.
  */
 
-package io.jpalite.jqpl;
+package io.jpalite.test;
 
 import io.jpalite.impl.JPAEntityImpl;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Entity
-@Table(name = "DEPT")
+@Table(name = "COMPANY")
 @Getter
 @Setter
-public class Department extends JPAEntityImpl
+public class Company extends JPAEntityImpl
 {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "IRN", updatable = false)
-	private Integer id;
+	private long id;
 
 	@Column(name = "NAME")
 	private String name;
-
-	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "COMP", nullable = false)
-	private Company company;
-
-	@OneToMany(mappedBy = "department")
-	private List<Employee> employees;
-}//Department
+}//Company

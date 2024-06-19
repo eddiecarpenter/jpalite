@@ -179,7 +179,7 @@ public interface EntityField
 	 *
 	 * @return The attribute converter class. If no converter is set, null is returned
 	 */
-	@SuppressWarnings("java:S3740")
+	@SuppressWarnings({"java:S3740", "rawtypes"})
 	// Suppress warning for generic types
-	TradeSwitchConvert getConverterClass();
+	FieldConvertType getConverter();
 }

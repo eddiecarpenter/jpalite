@@ -20,7 +20,7 @@ package io.jpalite.impl.db;
 import io.jpalite.PersistenceContext;
 import io.jpalite.*;
 import io.jpalite.impl.EntityL1LocalCacheImpl;
-import io.jpalite.impl.EntityL2CacheImpl;
+import io.jpalite.impl.caching.EntityCacheImpl;
 import io.jpalite.impl.queries.EntityDeleteQueryImpl;
 import io.jpalite.impl.queries.EntityInsertQueryImpl;
 import io.jpalite.impl.queries.EntityUpdateQueryImpl;
@@ -34,10 +34,10 @@ import io.opentelemetry.context.Scope;
 import io.quarkus.runtime.Application;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.persistence.RollbackException;
-import jakarta.persistence.TransactionRequiredException;
 import jakarta.persistence.*;
-import jakarta.transaction.*;
+import jakarta.transaction.Status;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.TransactionManager;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +48,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static io.jpalite.JPALiteEntityManager.JPALITE_SHOW_SQL;
 import static io.jpalite.JPALiteEntityManager.PERSISTENCE_QUERY_LOG_SLOWTIME;
+import static io.jpalite.JPALiteEntityManager.PERSISTENCE_SHOW_SQL;
 import static io.jpalite.PersistenceAction.*;
 
 /**
@@ -197,7 +197,8 @@ public class PersistenceContextImpl implements PersistenceContext
 
 		entityL1Cache = new EntityL1LocalCacheImpl(this);
 
-		entityL2Cache = new EntityL2CacheImpl(this.persistenceUnit);
+		//entityL2Cache = new EntityL2CacheImpl(this.persistenceUnit);
+		entityL2Cache = new EntityCacheImpl(this.persistenceUnit);
 
 
 		LOG.debug("Created {}", this);
@@ -229,7 +230,7 @@ public class PersistenceContextImpl implements PersistenceContext
 					slowQueryTime = slowQuery;
 				}//if
 			}
-			case JPALITE_SHOW_SQL -> {
+			case PERSISTENCE_SHOW_SQL -> {
 				if (value instanceof String strValue) {
 					value = Boolean.parseBoolean(strValue);
 				}//if
@@ -772,7 +773,7 @@ public class PersistenceContextImpl implements PersistenceContext
 							if (action == PersistenceAction.DELETE) {
 								entity._setEntityState(EntityState.REMOVED);
 								if (entity._getMetaData().isCacheable()) {
-									l2Cache().remove(entity);
+									l2Cache().evict(entity.get$$EntityClass(), entity._getPrimaryKey());
 								}//if
 
 								cascadeRemove(Set.of(MappingType.MANY_TO_ONE), entity);
@@ -787,7 +788,7 @@ public class PersistenceContextImpl implements PersistenceContext
 									}//try
 								}//if
 								else if (entity._getMetaData().isCacheable()) {
-									l2Cache().update(entity);
+									l2Cache().replace(entity);
 								}//else if
 
 								cascadePersist(Set.of(MappingType.ONE_TO_MANY, MappingType.ONE_TO_ONE), entity);
@@ -974,7 +975,7 @@ public class PersistenceContextImpl implements PersistenceContext
 		catch (SQLException ex) {
 			throw new PersistenceException("Error beginning a transaction", ex);
 		}//catch
-		catch (SystemException | NotSupportedException ex) {
+		catch (SystemException ex) {
 			throw new PersistenceException("Error beginning a transaction in TransactionManager", ex);
 		}//catch
 		finally {
@@ -1019,8 +1020,7 @@ public class PersistenceContextImpl implements PersistenceContext
 				setRollbackOnly();
 				throw new PersistenceException("Error committing transaction", ex);
 			}//catch
-			catch (SystemException | jakarta.transaction.RollbackException |
-				   HeuristicMixedException | HeuristicRollbackException ex) {
+			catch (SystemException ex) {
 				setRollbackOnly();
 				throw new PersistenceException("Error committing transaction in TransactionManager", ex);
 			}//catch
@@ -1091,6 +1091,11 @@ public class PersistenceContextImpl implements PersistenceContext
 	}
 	//</editor-fold>
 
+	public boolean isReadonly()
+	{
+		return readOnly;
+	}
+
 	//<editor-fold desc="Legacy support - Methods used by JPADatabase" defaultstate="collapsed">
 	public long getSlowQueryTime()
 	{
@@ -1112,11 +1117,6 @@ public class PersistenceContextImpl implements PersistenceContext
 		checkOpen();
 		connection.setEnableLogging(pEnableLogging && showSql);
 	}//setEnableLogging
-
-	public boolean isReadonly()
-	{
-		return readOnly;
-	}
 
 	public void setReadonly(boolean pReadonly)
 	{

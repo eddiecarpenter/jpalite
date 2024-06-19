@@ -28,8 +28,6 @@ import java.sql.ResultSet;
 
 /**
  * The JPALite implementation
- *
- * @see <a href="https://confluence.frei.one/x/_4EEC">TradeSwitch Persistence Manager in Confluence</a>
  */
 public interface JPALiteEntityManager extends EntityManager, Closeable
 {
@@ -43,7 +41,7 @@ public interface JPALiteEntityManager extends EntityManager, Closeable
 	String PERSISTENCE_QUERY_LOG_SLOWTIME = "jpalite.persistence.log.slowQueries";
 	/**
 	 * The javax.persistence.query.timeout hint defines, in seconds, how long a query is allowed to run before it gets
-	 * cancelled. TradeSwitch doesn’t handle this timeout itself but provides it to the JDBC driver via the JDBC
+	 * cancelled. The JPA stack does’t handle this timeout itself but provides it to the JDBC driver via the JDBC
 	 * Statement.setTimeout method.
 	 */
 	String PERSISTENCE_QUERY_TIMEOUT = "jakarta.persistence.query.timeout";
@@ -52,45 +50,40 @@ public interface JPALiteEntityManager extends EntityManager, Closeable
 	 */
 	String PERSISTENCE_LOCK_TIMEOUT = "jakarta.persistence.lock.timeout";
 	/**
-	 * Valid values are USE or BYPASS. If setting is not recognized it defaults to USE.
+	 * Valid values are USE or BYPASS. If the setting is not recognised, it defaults to USE.
 	 * <p>
-	 * The retrieveMode hint supports the values USE and BYPASS and tells TradeSwitch if it shall USE the second-level
+	 * The retrieveMode hint supports the values USE and BYPASS and tell Query implementation if it shall USE the second-level
 	 * cache to retrieve an entity or if it shall BYPASS it and get it directly from the database.
 	 */
 	String PERSISTENCE_CACHE_RETRIEVEMODE = "jakarta.persistence.cache.retrieveMode";
 	/**
 	 * If set to true entities retrieved in {@link Query#getResultList()} is also cached
 	 */
-	String TRADESWITCH_CACHE_RESULTLIST = "org.tradeswitch.cache.resultList";
-	/**
-	 * Used to hint persistence layer that the provided name should be used as the connection name, in the case of a
-	 * JDBC type connection it will be used as the cursor name.
-	 */
-	String TRADESWITCH_CONNECTION_NAME = "org.tradeswitch.connectionName";
+	String PERSISTENCE_CACHE_RESULTLIST = "jpalite.cache.resultList";
 	/**
 	 * Hint the JQPL parser to ignore fetchtype setting on basic fields effectively setting all basic fields to be
 	 * EAGERly fetched.
 	 */
-	String TRADESWITCH_OVERRIDE_BASIC_FETCHTYPE = "org.tradeswitch.override.basicFetchType";
+	String PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE = "jpalite.override.basicFetchType";
 	/**
 	 * Valid values are EAGER or LAZY. If the setting is not recognised it is ignored.
 	 * <p>
 	 * Hint the JQPL parser to ignore fetchtype settings on all fields and effectively setting all fields to be EAGERly
 	 * or LAZYly fetched.
 	 */
-	String TRADESWITCH_OVERRIDE_FETCHTYPE = "org.tradeswitch.override.FetchType";
+	String PERSISTENCE_OVERRIDE_FETCHTYPE = "jpalite.override.FetchType";
 	/**
 	 * Valid values are TRUE or FALSE. If the setting is not recognized it is ignored. A hint that can be passed to the
 	 * Entity Manager or any Query to log the actual query that is executed.
 	 */
-	String JPALITE_SHOW_SQL = "jpalite.showSql";
+	String PERSISTENCE_SHOW_SQL = "jpalite.showSql";
 	/**
 	 * Valid values are EAGER or LAZY. If the setting is not recognised it is ignored.
 	 * <p>
-	 * A hint that can be passed to a Native Query that selection is done on the primary key. This will allow the query
+	 * A hint that can be passed to a Native Query that query is done using only the primary key. This will allow the query
 	 * executor to use L2 caching.
 	 */
-	String TRADESWITCH_ONLY_PRIMARYKEY_USED = "org.tradeswitch.primarykey.used";
+	String PERSISTENCE_PRIMARYKEY_USED = "jpalite.primarykey.used";
 
 	/**
 	 * Synchronize the entity to the underlying database.
