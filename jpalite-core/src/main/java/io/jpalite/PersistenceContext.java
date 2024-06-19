@@ -44,20 +44,20 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	/**
 	 * This method is used to check if the context have support for a given {@link EntityType}
 	 *
-	 * @param pEntityType the entity type
+	 * @param entityType the entity type
 	 * @return True if supported
 	 */
-	boolean supportedEntityType(EntityType pEntityType);
+	boolean supportedEntityType(EntityType entityType);
 
 	/**
 	 * Open a new connection. If already open stack will be maintained to keep track of the number of times the
 	 * connection has been opened with closing it. The cursor name is null current thread name is used.
 	 *
-	 * @param pConnectionName The connection name
+	 * @param connectionName The connection name
 	 * @return The connection
 	 */
 	@Nonnull
-	Connection getConnection(String pConnectionName);
+	Connection getConnection(String connectionName);
 
 	/**
 	 * Close the connection, if the connection was opened previously the open stack will be popped. If forced the open
@@ -81,16 +81,16 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * Register a transaction listener. The listener will be called whenever a new transaction started, committed of
 	 * rolled back
 	 *
-	 * @param pListener The listener
+	 * @param listener The transaction listener to add
 	 */
-	void addTransactionListener(EntityTransactionListener pListener);
+	void addTransactionListener(EntityTransactionListener listener);
 
 	/**
-	 * Remove a previously set listener
+	 * Removes a transaction listener from the persistence context.
 	 *
-	 * @param pListener
+	 * @param listener The transaction listener to remove
 	 */
-	void removeTransactionListener(EntityTransactionListener pListener);
+	void removeTransactionListener(EntityTransactionListener listener);
 
 	/**
 	 * Return number of times the same a transaction has been started on the same connection
@@ -102,9 +102,9 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	/**
 	 * Called by the database undertow to report the query that was execute
 	 *
-	 * @param pLastQuery The query
+	 * @param lastQuery The query
 	 */
-	void setLastQuery(String pLastQuery);
+	void setLastQuery(String lastQuery);
 
 	/**
 	 * Get the last executed query
@@ -130,9 +130,9 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	/**
 	 * Set the cursor name to be used when request a connection
 	 *
-	 * @param pConnectionName the cursor name
+	 * @param connectionName the cursor name
 	 */
-	void setConnectionName(String pConnectionName);
+	void setConnectionName(String connectionName);
 
 	/**
 	 * Return the Level 1 cache instance of {@link EntityLocalCache} linked to the context.
@@ -151,21 +151,21 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	/**
 	 * Map the ResultSet to the given entity and the entity to the persistence context
 	 *
-	 * @param pEntity    The entity
-	 * @param vResultSet the {@link ResultSet}
+	 * @param entity    The entity
+	 * @param resultSet the {@link ResultSet}
 	 * @return The entity
 	 */
-	<X> X mapResultSet(@Nonnull X pEntity, ResultSet vResultSet);
+	<X> X mapResultSet(@Nonnull X entity, ResultSet resultSet);
 
 	/**
 	 * Map the ResultSet to the given entity and the entity to the persistence context
 	 *
-	 * @param pEntity    The entity
-	 * @param pColPrefix Only used column from the result set that starts with pColPrefix
-	 * @param pResultSet the {@link ResultSet}
+	 * @param entity    The entity
+	 * @param colPrefix Only used column from the result set that starts with colPrefix
+	 * @param resultSet the {@link ResultSet}
 	 * @return The entity
 	 */
-	<X> X mapResultSet(@Nonnull X pEntity, String pColPrefix, ResultSet pResultSet);
+	<X> X mapResultSet(@Nonnull X entity, String colPrefix, ResultSet resultSet);
 
 	/**
 	 * Synchronize the persistence context to the underlying database.
@@ -184,7 +184,7 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * @throws PersistenceException         if the flush fails
 	 * @throws IllegalStateException        if the connection is not open
 	 */
-	void flushEntity(@Nonnull JPAEntity pEntity);
+	void flushEntity(@Nonnull JPAEntity entity);
 
 	/**
 	 * Synchronize the all entity of a given type belonging to the persistence context to the underlying database.
@@ -194,7 +194,7 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * @throws PersistenceException         if the flush fails
 	 * @throws IllegalStateException        if the connection is not open
 	 */
-	void flushOnType(Class<?> pEntityClass);
+	void flushOnType(Class<?> entityClass);
 
 	/**
 	 * Return the resource-level <code>EntityTransaction</code> object. The <code>EntityTransaction</code> instance may
@@ -248,11 +248,11 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * Set a persistance context property or hint. If a vendor-specific property or hint is not recognized, it is
 	 * silently ignored.
 	 *
-	 * @param pName  name of property or hint
-	 * @param pValue value for property or hint
+	 * @param name  name of property or hint
+	 * @param value value for property or hint
 	 * @throws IllegalArgumentException if the second argument is not valid for the implementation
 	 */
-	void setProperty(String pName, Object pValue);
+	void setProperty(String name, Object value);
 
 	/**
 	 * Get the properties and hints and associated values that are in effect for the persistence context. Changing the
