@@ -377,7 +377,7 @@ public class EntityFieldImpl implements EntityField
 			converter = converterClass.getConverter();
 		}//if
 		else {
-			if (type.isAssignableFrom(Enum.class)) {
+			if (type.isEnum()) {
 				Enumerated enumField = field.getAnnotation(Enumerated.class);
 				if (enumField == null) {
 					LOG.warn("{}: Field '{}' is not annotated as an enum, assuming it to be one - Developers must fix this", enityClass.getName(), field.getName());
