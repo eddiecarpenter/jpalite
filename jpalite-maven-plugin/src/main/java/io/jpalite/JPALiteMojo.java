@@ -40,18 +40,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Goal which touches a timestamp file.
- *
- * @goal jpalite
- * @phase process-sources
- * <p>
- * {@code ...
- * <configuration>
- * <skip>false</skip>
- * </configuration>
- * ...
- */
 @Mojo(name = "jpalite", defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES, requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME, threadSafe = true)
 public class JPALiteMojo extends AbstractMojo
 {
