@@ -87,9 +87,9 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 			JPALitePersistenceUnit persistenceUnit = persistenceUnitProvider.getPersistenceUnit(persistenceUnitName);
 			if (persistenceUnit != null) {
 				if (persistenceUnit.getMultiTenantMode().equals(Boolean.TRUE)) {
-					ServiceLoader<MultiTenant> multiTenantLoader = ServiceLoader.load(MultiTenant.class);
-					for (MultiTenant multiTenant : multiTenantLoader) {
-						JPALitePersistenceUnit legacyPersistenceUnit = multiTenant.getPersistenceUnit(persistenceUnit);
+					ServiceLoader<MultiTenantProvider> multiTenantLoader = ServiceLoader.load(MultiTenantProvider.class);
+					for (MultiTenantProvider multiTenantProvider : multiTenantLoader) {
+						JPALitePersistenceUnit legacyPersistenceUnit = multiTenantProvider.getPersistenceUnit(persistenceUnit);
 						if (legacyPersistenceUnit != null) {
 							return legacyPersistenceUnit;
 						}//if

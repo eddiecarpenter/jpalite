@@ -17,7 +17,7 @@
 
 package io.jpalite;
 
-public interface MultiTenant
+public interface MultiTenantProvider
 {
 	JPALitePersistenceUnit getPersistenceUnit(JPALitePersistenceUnit persistenceUnit);
 }
