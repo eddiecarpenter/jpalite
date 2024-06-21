@@ -38,7 +38,7 @@ public @interface PersistenceUnit
 
 
 	@SuppressWarnings("ClassExplicitlyAnnotation")
-	class PersistenceUnitLiteral extends AnnotationLiteral<PersistenceUnit> implements PersistenceUnit
+	final class PersistenceUnitLiteral extends AnnotationLiteral<PersistenceUnit> implements PersistenceUnit
 	{
 
 		private final String name;

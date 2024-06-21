@@ -17,15 +17,38 @@
 
 package io.jpalite.extension.deployment;
 
-import io.jpalite.agroal.AgroalDataSourceProvider;
-import io.jpalite.extension.PropertyPersistenceUnitProvider;
+import io.jpalite.*;
+import io.jpalite.extension.JPALiteConfigMapping;
+import io.jpalite.extension.JPALiteRecorder;
+import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
+import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
+import org.jboss.jandex.ClassType;
+import org.jboss.jandex.DotName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 
 class JPALiteExtensionProcessor
 {
+	private static final DotName ENTITY_MANAGER_FACTORY = DotName.createSimple("jakarta.persistence.EntityManagerFactory");
+	public static final DotName ENTITY_MANAGER = DotName.createSimple("jakarta.persistence.EntityManager");
+	private static final Logger LOG = LoggerFactory.getLogger(JPALiteExtensionProcessor.class);
+
+	private static final String DEFAULT_NAME = "<default>";
 
 	private static final String FEATURE = "jpalite-extension";
 
@@ -46,8 +69,102 @@ class JPALiteExtensionProcessor
 	@BuildStep
 	ReflectiveClassBuildItem reflection()
 	{
-		return ReflectiveClassBuildItem.builder(AgroalDataSourceProvider.class,
-												PropertyPersistenceUnitProvider.class)
+		return ReflectiveClassBuildItem.builder(DataSourceProvider.class,
+												PersistenceUnitProvider.class,
+												FieldConvertType.class,
+												EntityMetaDataManager.class)
 				.build();
+	}
+
+	@Record(RUNTIME_INIT)
+	@BuildStep
+	void generateJPABeans(JPALiteRecorder recorder,
+						  JPALiteConfigMapping jpaConfigMapping,
+						  BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer)
+	{
+		if (jpaConfigMapping.defaultPersistenceUnit() != null) {
+			//Define the default EntityManagerFactory producer
+			syntheticBeanBuildItemBuildProducer
+					.produce(createSyntheticBean(DEFAULT_NAME,
+												 false,
+												 EntityManagerFactory.class,
+												 List.of(ENTITY_MANAGER_FACTORY)
+							, true)
+									 .createWith(recorder.entityManagerFactorySupplier(DEFAULT_NAME))
+									 .done());
+
+			//Define the default EntityManager producer
+			syntheticBeanBuildItemBuildProducer
+					.produce(createSyntheticBean(DEFAULT_NAME,
+												 false,
+												 EntityManager.class,
+												 List.of(ENTITY_MANAGER)
+							, true)
+									 .createWith(recorder.entityManagerSupplier(DEFAULT_NAME))
+									 .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+									 .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+									 .done());
+		}//if
+
+
+		if (jpaConfigMapping.namedPersistenceUnits() != null) {
+			for (String unitName : jpaConfigMapping.namedPersistenceUnits().keySet()) {
+				//Define the named EntityManagerFactory producer
+				syntheticBeanBuildItemBuildProducer
+						.produce(createSyntheticBean(unitName,
+													 true,
+													 EntityManagerFactory.class,
+													 List.of(ENTITY_MANAGER_FACTORY)
+								, false)
+										 .createWith(recorder.entityManagerFactorySupplier(unitName))
+										 .done());
+
+				//Define the named EntityManager producer
+				syntheticBeanBuildItemBuildProducer
+						.produce(createSyntheticBean(unitName,
+													 true,
+													 EntityManager.class,
+													 List.of(ENTITY_MANAGER)
+								, false)
+										 .createWith(recorder.entityManagerSupplier(unitName))
+										 .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+										 .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+										 .done());
+
+			}
+		}//if
+	}
+
+	private static <T> SyntheticBeanBuildItem.ExtendedBeanConfigurator createSyntheticBean(String persistenceUnitName,
+																						   boolean isNamedPersistenceUnit,
+																						   Class<T> type,
+																						   List<DotName> allExposedTypes,
+																						   boolean defaultBean)
+	{
+		LOG.info("Creating Synthetic Bean for {}(\"{}\")", type.getSimpleName(), persistenceUnitName);
+		SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
+				.configure(type)
+				.scope(ApplicationScoped.class)
+				.unremovable()
+				.setRuntimeInit();
+
+		for (DotName exposedType : allExposedTypes) {
+			configurator.addType(exposedType);
+		}
+
+		if (defaultBean) {
+			configurator.defaultBean();
+		}
+
+		if (isNamedPersistenceUnit) {
+//			configurator.addQualifier(Default.class);
+			configurator.addQualifier().annotation(PersistenceUnit.class).addValue("value", persistenceUnitName).done();
+		}
+		else {
+			configurator.addQualifier(Default.class);
+			configurator.addQualifier().annotation(PersistenceUnit.class).done();
+		}
+
+		return configurator;
 	}
 }

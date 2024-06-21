@@ -146,12 +146,6 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 		out.println("}");
 		out.println("");
 
-		out.println("public " + argType + " clone(" + argType + " entity) {");
-		out.println("  EntityManager em = getEntityManager();");
-		out.println("  return ((JPALiteEntityManager)em).clone(entity);");
-		out.println("}");
-		out.println("");
-
 		out.println("public void delete(" + argType + " entity) {");
 		out.println("  EntityManager em = getEntityManager();");
 		out.println("  em.remove(entity);");
@@ -408,15 +402,10 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 			out.println("import jakarta.transaction.Transactional;");
 			out.println("import jakarta.annotation.Generated;");
 			out.println("import jakarta.persistence.*;");
-			out.println("import java.util.Collections;");
-			out.println("import java.util.List;");
-			out.println("import java.util.HashMap;");
-			out.println("import java.util.Map;");
-			out.println("import io.jpalite.extension.PersistenceProducer;");
-			out.println("import io.jpalite.JPALiteEntityManager;");
+			out.println("import java.util.*;");
 			out.println("import io.jpalite.PersistenceUnit;");
 			out.println("import io.jpalite.repository.*;");
-			out.println("import io.jpalite.EntityState;");
+//			out.println("import io.jpalite.EntityState;");
 			out.println();
 
 			SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
@@ -435,18 +424,25 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 			out.print(repoElement.getQualifiedName());
 
 			out.println(" {");
-//			out.println("  @Inject");
-//			out.print("  @PersistenceUnit(\"");
-//			out.print(annotation.persistenceUnit());
-//			out.println("\")");
-//			out.println("  EntityManager em;");
+
+			if (!annotation.persistenceUnit().startsWith("${")) {
+				out.println("  @Inject");
+				out.print("  @PersistenceUnit(\"");
+				out.print(annotation.persistenceUnit());
+				out.println("\")");
+				out.println("  EntityManager em;");
+			}//if
 
 			out.println("public EntityManager getEntityManager() {");
-			out.println("   PersistenceProducer producer = Arc.container().instance(PersistenceProducer.class).get();");
-			out.print("   return producer.getEntityManager(\"");
-			out.print(annotation.persistenceUnit());
-			out.println("\");");
-//			out.println("   return em;");
+			if (annotation.persistenceUnit().startsWith("${")) {
+				out.println("   io.jpalite.extension.JPALiteRecorder producer = Arc.container().instance(io.jpalite.extension.JPALiteRecorder.class).get();");
+				out.print("   return producer.getEntityManager(JpaRepositoryUtil.getPersistenceUnitName(\"");
+				out.print(annotation.persistenceUnit());
+				out.println("\"));");
+			}//if
+			else {
+				out.println("   return em;");
+			}//else
 			out.println("}");
 
 			repoElement.getInterfaces()

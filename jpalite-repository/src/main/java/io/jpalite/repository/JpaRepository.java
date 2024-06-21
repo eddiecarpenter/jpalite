@@ -98,14 +98,6 @@ public interface JpaRepository<E, I> extends RepositoryBase
 	E getReference(I id);
 
 	/**
-	 * Create a clone of an existing entity.
-	 *
-	 * @param entity
-	 * @return The new entity
-	 */
-	E clone(E entity);
-
-	/**
 	 * Delete an attached entity from the repository.
 	 *
 	 * @param entity

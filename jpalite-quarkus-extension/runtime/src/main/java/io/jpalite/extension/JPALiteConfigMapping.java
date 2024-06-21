@@ -32,7 +32,7 @@ import org.eclipse.microprofile.config.spi.Converter;
 import java.util.Map;
 
 @ConfigMapping(prefix = "jpalite.persistenceUnit")
-@ConfigRoot(phase = ConfigPhase.RUN_TIME)
+@ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
 public interface JPALiteConfigMapping
 {
 	/**
