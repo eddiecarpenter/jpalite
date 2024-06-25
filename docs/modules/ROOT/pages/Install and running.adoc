@@ -4,7 +4,7 @@ include::includes/attributes.adoc[]
 
 == Introduction
 
-The JPALite library was designed to work in a Quarkus environment and all the dependency injection features like `@Transactional` and `@Inject` of `EntityManager`, etc into a bean are specific implemented to work in https://quarkus.io[Quarkus].
+The JPALite library was designed to work in a Quarkus environment and all the dependency injection features like `@Transactional` and `@Inject` of `EntityManager`, etc into a bean are specific implemented to work in link:https://quarkus.io[Quarkus,window=_blank].
 
 That does not mean you cannot use JPALite in a standalone application as all the JPA standalone features are available to you.
 
