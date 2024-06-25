@@ -1,6 +1,6 @@
 site:
   title: AJPLite Docs
-  start_page: jpalite::home.adoc
+  start_page: jpalite::index.adoc
 
 content:
   sources:

@@ -1,4 +1,4 @@
-* xref:home.adoc[Introduction]
+* xref:index.adoc[Introduction]
 * xref:quickstart/Quick Start.adoc[Quick Start]
 ** xref:quickstart/Defining Entity Class.adoc[Defining Entity Class]
 ** xref:quickstart/Defining Persistence Unit.adoc[Defining Persistence Unit]
