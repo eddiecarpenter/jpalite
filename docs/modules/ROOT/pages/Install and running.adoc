@@ -1,6 +1,6 @@
 = Installation and Setup
 :keywords: installation, setup, maven depedencies
-include::./attributes.adoc[]
+include::includes/attributes.adoc[]
 
 == Introduction
 
@@ -32,7 +32,7 @@ Add the following dependency to your POM file in order to use the library.
 The JPALite Repository library provides a repository pattern to be used with JPALite.
 In theory, the repository pattern could be used together with any JPA solution, but this was not tested.
 
-The Repository implementation is discussed in detail xref:includes/Repository Pattern.adoc[here].
+The Repository implementation is discussed in detail xref:Repository Pattern.adoc[here].
 
 Add the following dependency to your POM file in order to use the library.
 
@@ -48,7 +48,7 @@ Add the following dependency to your POM file in order to use the library.
 === JPALite Quarkus Extension
 
 The Quarkus extension enables dependency injection of the JPA elements into beans.
-See xref:includes/Dependency Injection.adoc[Dependency Injection] for more detail.
+See xref:Dependency Injection.adoc[Dependency Injection] for more detail.
 
 Add the following dependency to your POM file in order to use the library.
 

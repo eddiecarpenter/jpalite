@@ -1,11 +1,12 @@
 site:
   title: AJPLite Docs
-  start_page: index::index.adoc
-  
+  start_page: jpalite::home.adoc
+
 content:
   sources:
-  - url: . # common module containing just the main index
-    branches: HEAD
+    - url: .. # common module containing just the main index
+      branches: HEAD
+      start_path: docs
 ui:
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
