@@ -1,0 +1,4 @@
+* xref:index.adoc[Introduction]
+* xref:includes/Install and running.adoc[Installation and Running]
+* xref:includes/Repository Pattern.adoc[Repository Pattern]
+* xref:includes/Dependency Injection.adoc[Dependency Injection]

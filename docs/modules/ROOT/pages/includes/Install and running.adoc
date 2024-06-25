@@ -1,0 +1,68 @@
+= Installation and Setup
+:keywords: installation, setup, maven depedencies
+include::./attributes.adoc[]
+
+== Introduction
+
+The JPALite library was designed to work in a Quarkus environment and all the dependency injection features like `@Transactional` and `@Inject` of `EntityManager`, etc into a bean are specific implemented to work in https://quarkus.io[Quarkus].
+
+That does not mean you cannot use JPALite in a standalone application as all the JPA standalone features are available to you.
+
+== Installation
+
+The JPALite stack consist of the following three libraries:
+
+=== JPALite Core library
+
+The JPALite core provides the core implementation of the JPA stack is all that you need for a standalone application.
+
+Add the following dependency to your POM file in order to use the library.
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.jpalite</groupId>
+    <artifactId>jpalite-core</artifactId>
+    <version>{project-version}</version>
+</dependency>
+----
+
+=== JPALite Repository Library
+
+The JPALite Repository library provides a repository pattern to be used with JPALite.
+In theory, the repository pattern could be used together with any JPA solution, but this was not tested.
+
+The Repository implementation is discussed in detail xref:includes/Repository Pattern.adoc[here].
+
+Add the following dependency to your POM file in order to use the library.
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.jpalite</groupId>
+    <artifactId>jpalite-repository</artifactId>
+    <version>{project-version}</version>
+</dependency>
+----
+
+=== JPALite Quarkus Extension
+
+The Quarkus extension enables dependency injection of the JPA elements into beans.
+See xref:includes/Dependency Injection.adoc[Dependency Injection] for more detail.
+
+Add the following dependency to your POM file in order to use the library.
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>io.jpalite</groupId>
+    <artifactId>jpalite-quarkus-deployment</artifactId>
+    <version>{project-version}</version>
+</dependency>
+----
+
+ instance, with Maven, add the following dependency to your POM file:
+
+== Extension Configuration Reference
+
+TIP: Remove this section if you don't have Quarkus configuration properties in your extension.

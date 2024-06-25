@@ -1,0 +1,40 @@
+= JPA Lite
+
+TIP: A lightweight Jakarta API stack
+
+include::./includes/attributes.adoc[]
+
+== Introduction
+
+Welcome to the JPALite documentation.
+The documentation will guide you on how to install, configure and use JPALite.
+
+The documentation provided here is by no means complete and merely highlights the various aspects of the implementation, with specific reference to areas where ot deviated from or extended the JPA specification.
+
+The primary purpose of this documentation is to make you more productive using JPALite in a short time.
+The aim is not to provide a detailed architectural design but rather to provide enough architectural background information to enable you to use the JPALite functionality effectively.
+
+== Prerequisite Knowledge
+
+Prior knowledge of database programming (SQL, JDBC, ORM or JPA) is not required but will be helpful to follow this documentation.
+Still, a strong background and understanding of the Java language are essential.
+
+=== Further Reading and Resources
+
+This guide focuses mainly on practical issues to make the reader proficient in a short time.
+After reading this guide, you may want to extend your knowledge of JPA by reading a book on JPA.
+
+1. https://www.baeldung.com/learn-jpa-hibernate offers a very nice tutorial - Make sure you ignore the Hibernate specific references but the tutorial does offer a lot of useful information.
+2. https://www.tutorialspoint.com/jpa/index.htm is another site that offers a good tutorial.
+3. https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.htm is the official Jakarta documentation for those that suffer from insomnia and are looking for something to read to get through the night.
+
+=== Disclaimer
+
+Please keep in mind that JPALite does not support all of the JPA functionality, and some of the more advanced features might not be available.
+
+If you get to a point where you need a specific feature not currently supported, speak to the Architecture team!
+
+=== Known JPA features not currently supported
+
+1. Criteria Queries
+2. Procedure Queries
