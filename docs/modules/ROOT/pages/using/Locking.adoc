@@ -1,0 +1,3 @@
+== Locking
+
+include::../includes/attributes.adoc[]

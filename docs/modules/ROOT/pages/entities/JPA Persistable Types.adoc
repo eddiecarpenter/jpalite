@@ -1,0 +1,129 @@
+= JPA Persistable Types
+
+The term persistable types refers to data types that can be used for storing data in the database.
+JPALite supports all the JPA persistable types, which are:
+
+* User-defined classes - Entity classes, Mapped superclasses, Embeddable classes.
+* Simple Java data types - Primitive types, Wrappers, String, date, and math.
+* Multivalue types - Collections, Maps and Arrays.
+* Miscellaneous types - Enum types types (user or system defined).
+* xref:entities/Atrribute Converters.adoc[Attribute Converters] - Allow the use to of custom types as attributes (Discussed separately).
+
+== Entity Classes
+
+An entity class is an ordinary user-defined Java class whose instances can be stored in a database or other types of persisted storage.
+The easy way to declare a class as an entity is to mark it with the `@Entity` annotation.
+
+== Entity Class Names
+
+Entity classes are represented in queries by entity names.
+By default, the entity name is the unqualified name of the entity class (i.e. the short class name excluding the package name).
+A different entity name can be set explicitly by using the name attribute of the Entity annotation:
+
+[source,java]
+----
+@Entity(name="MyName")
+public class MyEntity {
+}
+----
+
+[IMPORTANT]
+Entity names *must be system-wide unique* and can the name not be reserved literal in the Java Persistence query language.
+
+== Defining the table
+
+`@Table` is set at the class level; it allows you to define the table for your entity mapping.
+The use of the `@Table` annotation is mandatory in JPALite and an `EntityMapException` is thrown if it is not set.
+
+[source,java]
+----
+@Entity
+@Table(name="TABLE1")
+public class MyEntity {
+}
+----
+
+[NOTE]
+The *catalog, schema, uniqueConstraints* and *indexes* attributes of the `@Table` annotation are currently ignored by JPALite.
+
+== Mapped Superclasses
+
+JPALite does not support mapped superclasses and is the `@MappedSuperclass` annotation ignored.
+
+[#Embeddable_Classes]
+== Embeddable Classes
+
+[source,java]
+----
+@Embeddable
+public class FullName {
+    @Column(name="NAME")
+    String name;
+    @Column(name="SURNAME")
+    String surname;
+}
+
+@Entity
+@Table(name="TABLE1")
+public class Employee {
+    @Id
+    @Column(name="EMPNO")
+    int empNo;
+
+   @Embedded
+   FullName fullName;
+
+   @Column(name="DATEOFBIRTH")
+   Timestamp birth;
+}
+----
+
+Instances of embeddable classes are always embedded in other entity objects and do not require separate space allocation and separate store and retrieval operations.
+Embeddable classes are user-defined persistable classes that function as value types and are declared as embeddable by marking them with the `@Embeddable` annotation.
+In order to use an embeddable class, the field is annotated with `@Embedded`
+
+== Simple Java Data Types
+
+All the following simple Java data types are persistable:
+
+* Primitive types: boolean, byte, short, char, int, long, float and double.
+* Equivalent wrapper classes from package java.lang:
+** Boolean, Byte, Short, Character, Integer, Long, Float and Double.
+* java.math.BigInteger, java.math.BigDecimal.
+* java.lang.String.
+* java.util.Date, java.util.Calendar,
+* java.sql.Date, java.sql.Time, java.sql.Timestamp.
+* LocalDate, LocalTime, LocalDateTime
+
+== Enum Types
+
+All enum types are persistable.
+
+[TIP]
+By default, enum values are represented internally by their ordinal numbers.
+Caution is required when modifying an enum type that is already in use in an existing database.
+New enum fields can be added safely only at the end (with new higher ordinal numbers).
+
+Alternatively, enum values can be represented internally by their names.
+In that case, the names must be fixed since changing a name can cause data loss in existing databases.
+
+The `@Enumerated` annotation enables choosing the internal representation:
+
+[source,java]
+----
+@Entity
+@Table(name="STYLE")
+public class Style {
+    private Color color1; // default is EnumType.ORDINAL
+
+    @Enumerated(EnumType.ORDINAL)
+    private Color color2;
+
+	@Enumerated(EnumType.STRING)
+    private Color color3;
+}
+
+enum Color { RED, GREEN, BLUE }
+----
+
+In the above example, values of the _color1_ and _color2_ fields are stored as ordinal numbers (i.e. 0, 1, 2) while values of the _color3_ field are stored internally as strings (i.e. “RED”, “GREEN”, “BLUE”).

@@ -4,6 +4,12 @@
 .metadata
 *.stale
 
+#npm
+docs/package-lock.json
+docs/node_modules/
+docs/build/
+docs/cache/
+
 # ItelliJ
 .idea/
 *.iml

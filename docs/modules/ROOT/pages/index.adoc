@@ -6,13 +6,13 @@ include::./includes/attributes.adoc[]
 
 == Introduction
 
-Welcome to the JPALite documentation.
-The documentation will guide you on how to install, configure and use JPALite.
+Welcome to the {product-name} documentation.
+The documentation will guide you on how to install, configure and use {product-name}.
 
 The documentation provided here is by no means complete and merely highlights the various aspects of the implementation, with specific reference to areas where ot deviated from or extended the JPA specification.
 
 The primary purpose of this documentation is to make you more productive using JPALite in a short time.
-The aim is not to provide a detailed architectural design but rather to provide enough architectural background information to enable you to use the JPALite functionality effectively.
+The aim is not to provide a detailed architectural design but rather to provide enough architectural background information to enable you to use the {product-name} functionality effectively.
 
 == Prerequisite Knowledge
 
@@ -30,9 +30,9 @@ After reading this guide, you may want to extend your knowledge of JPA by readin
 
 === Disclaimer
 
-Please keep in mind that JPALite does not support all of the JPA functionality, and some of the more advanced features might not be available.
+Please keep in mind that {product-name} does not support all of the JPA functionality, and some of the more advanced features might not be available.
 
-If you get to a point where you need a specific feature not currently supported, speak to the Architecture team!
+If you get to a point where you need a specific feature not currently supported, send me an email at {email}, or even better, get involved!
 
 === Known JPA features not currently supported
 

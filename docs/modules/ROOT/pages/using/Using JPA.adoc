@@ -1,0 +1,15 @@
+= Using {product-name} JPA
+
+include::../includes/attributes.adoc[]
+
+The sections below explain how to use the JPA implementation of {product-name}.
+As per the xref:index.adoc[Introduction], the documentation provided here is by no means complete and merely highlights the various aspects of the {product-name} implementation, with specific reference to areas where it deviated from or extended the JPA specification.
+
+This section contains the following sub-sections:
+
+* xref:using/Database Connections.adoc[Database Connections]
+* xref:using/Entity LifeCycle.adoc[Entity LifeCycle]
+* xref:using/crud/CRUD operations.adoc[CRUD operations]
+* xref:using/Locking.adoc[Locking]
+* xref:using/Level 2 Caching.adoc[Level 2 Caching]
+* xref:using/Maven JPA Tooling.adoc[Maven JPA Tooling]

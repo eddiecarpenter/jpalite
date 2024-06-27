@@ -1,1 +1,53 @@
 = Defining Entity Class
+
+To be able to store a Settings object in the database using JPA we need to define an entity class.
+A JPA entity class is a POJO (Plain Old Java Object) class, i.e. an ordinary Java class that is marked (annotated) as having the ability to represent objects in the database.
+
+Conceptually this is similar to serialising of classes, which are marked as having the ability to be serialised.
+
+== The Settings Entity Class
+
+[source,java]
+----
+package io.example.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+
+@Entity
+@Table(name = "SETTINGS")
+@Getter
+@Setter
+public class Settings
+{
+    @Id
+    @Column(name = "SET_KEY", nullable = false, updatable = false)
+    private String key;
+    @Column(name = "SET_VALUE")
+    private String value;
+    @Column(name = "SET_DESC", nullable = false)
+    private String description;
+}
+----
+
+As you can see above, an entity class is an ordinary Java class.
+The addition of the Persistence annotation `@Entity` marks the class as an entity class.
+An attempt to persist the Settings object without marking the Settings class as an entity(`@Entity`) class will cause a PersistenceException.
+
+NOTE: The example above makes use of Lombok to generate the getters and setters for the fields.
+Using Lombok is optional and one could have defined the getters and setters for the field as code.
+
+== Persistent Fields in Entity Classes
+
+Storing an entity object in the database does not store methods and code.
+Only the persistent state of the entity object, as reflected by its persistent fields is stored.
+The `@Column` annotation links the column in the database and the field in the entity class such that when a row is read from the database value in a column will be loaded into the field that is annotated with that column name.
+In addition to the `@Column` annotation, a field can also be indicated with `@Id` annotation.
+This marks the field also being the primary key.
+For example, the _key_ field in the example above is annotated with `@Id` annotation designating that field to be containing the primary key.
+
+The various persistence annotations are described in detail in the xref:entities/Entity Classes.adoc[Entity Classes] section.

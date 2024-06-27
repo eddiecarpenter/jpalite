@@ -1,0 +1,3 @@
+== Maven JPA Tooling
+
+include::../includes/attributes.adoc[]

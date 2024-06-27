@@ -1,5 +1,5 @@
 site:
-  title: AJPLite Docs
+  title: Offline AJPLite Docs
   start_page: jpalite::index.adoc
 
 content:
@@ -14,6 +14,7 @@ ui:
 
 runtime:
   fetch: false
+  cache_dir: ./cache
 
 asciidoc:
   attributes:

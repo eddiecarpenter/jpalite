@@ -1,0 +1,78 @@
+== Database Connections
+
+include::../includes/attributes.adoc[]
+
+{product-name} implements the following Java Persistence API interfaces for accessing the database.
+
+[ditaa]
+....
+                                               +-----------------+
+                                    +--------->|EntityTransaction|
+                                    |          +-----------------+
+  +----------------------+   +-------------+   +------------------+
+  | EntityManagerFactory |-->|EntityManager|-->|PersistenceContext|
+  +----------------------+   +-------------+   +------------------+
+                                    |          +-----+
+                                    +--------->|Query|
+                                               +-----+
+....
+
+## Overview
+
+A connection to a database is represented by an `EntityManager` instance.
+An EntityManager is created by the `EntityManagerFactory`.
+
+EntityManagerFactory and EntityManager can either be instantiated using the Persistence JPA bootstrap class or through dependency injection.
+
+[source,java]
+----
+EntityManagerFactory emf = Persistence.createEntityManagerFactory("myPersistenceUnit");
+EntityManager em = emf.createEntityManager();
+----
+
+Instantiation using the JPA bootstrap class
+
+[source,java]
+----
+@ApplicationScope
+public class MyClass
+{
+    @Inject
+    @PersistenceUnit("myPersistenceUnit")
+    EntityManagerFactory emf;
+
+    @Inject
+    @PersistenceUnit("myPersistenceUnit")
+    EntityManager em;
+}
+----
+
+Instantiation through dependency injection.
+Note that you do not need to inject the EntityManagerFactory in order to inject the EntityManager.
+
+The behavior of the EntityManager and factory differs slightly depending on the instantiation method.
+Instantiation using the JPA bootstrap class will reuse the same database connection if call multiple times on the same thread.
+In the case of dependency injection, the Java Transaction API will control if a new connection is to be made.
+
+== EntityManagerFactory
+
+The entity manager is constructed by passing it the name of the Persistence Unit name it should use to create the database connection.
+The EntityManagerFactory resolves the PersistenceUnit name using the SPI service looking implementers of the `io.jpalite.PersistenceUnitProvider` interface.
+The interface will return an object that implements the `jakarta.persistence.spi.PersistenceUnitInfo` interface.
+
+=== Entity Transaction
+
+Operations that affect the content of the database (store, update, delete) must be performed within an active transaction.
+The `EntityTransaction` interface represents and manages database transactions.
+Every `EntityManager` holds a single attached EntityTransaction instance that is available via the getTransaction method.
+
+A transaction is started by a call to begin and ended by a call to either commit or rollback.
+All the operations on the database within these boundaries are associated with that transaction and are kept in memory until the transaction is ended.
+If the transaction is ended with a rollback, all the modifications to the database are discarded.
+However, by default, the in-memory instance of the managed entity is not affected by the rollback and is not returned to its pre-modified state.
+
+Ending a transaction with a commit propagates all the modifications physically to the database.
+If for any reason a commit fails, the transaction is rolled back automatically (including rolling back modifications that have already been propagated to the database prior to the failure) and a RollbackException is thrown.
+
+[NOTE]
+In the case of Dependency Injection, the JTA will manage the transaction management and an `IllegalStateException` exception will be thrown if EntityManager.getTransaction method is called.
