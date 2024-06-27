@@ -1,6 +1,5 @@
-= Using {product-name} JPA
-
 include::../includes/attributes.adoc[]
+= Using {product-name} JPA
 
 The sections below explain how to use the JPA implementation of {product-name}.
 As per the xref:index.adoc[Introduction], the documentation provided here is by no means complete and merely highlights the various aspects of the {product-name} implementation, with specific reference to areas where it deviated from or extended the JPA specification.
