@@ -1,3 +1,116 @@
 == Level 2 Caching
 
 include::../includes/attributes.adoc[]
+
+Every EntityManager owns a persistence context, which is a collection of all the entity objects that it manages.
+The persistence context serves as a first-level cache (L1).
+An attempt to retrieve an entity object that is already managed by the EntityManager returns the existing instance from the persistence context, rather than a newly instantiated entity object.
+The scope of the persistence context is one EntityManager.
+A level 2 (L2) cache of entity objects is managed system-wide (across EntityManagers and JVM's) and saves the EntityManager from having the fetching the entity from the database.
+
+== Global configuration
+
+The use of the second-level caching can be disabled at an application (JVM) level by setting `"jpalite.persistence.l2cache"` startup parameter to false.
+
+[CAUTION]
+Care should be taken as any update done in this JVM will not be saved in the cache, which will cause applications that do use the cache to be out of sync.
+
+Entity level configuration {product-name} only operates in a `NONE` or `ENABLE_SELECTIVE` cache mode.
+Under the `ENABLE_SELECTIVE` cache mode entities that need to be cached, need to be explicitly marked as cacheable.
+
+[source,java]
+----
+@Cacheable
+@Entity
+@Caching(12, TimeUnit.HOURS)
+public class MyCacheableEntityClass {
+ //...
+}
+----
+
+Inb the above example the entity enabled for caching with aa 12-hour idle expiry time.
+
+The @Caching annotation is a {product-name} specific extension to override the system default cache retention sttategy.
+The specific cache configuration is controlled using the `@Caching` annotation where:
+
+[none]
+* *cacheName* is the cache name to used and defaults to L2CACHE
+* *idleTime* is the time an item should remain in the cache before being expired.
+Setting this to 0 disables expiring.
+* *unit* is the TimeUnit that the idleTime is specified in.
+
+== CacheStoreMode
+
+`CacheStoreMode` in JPA determines how the JPA provider interacts with the second-level cache (L2 cache) when storing or updating entities.
+It primarily affects caching behavior during entity lifecycle operations such as persisting (inserting), merging (updating), and removing entities.
+
+There are typically three modes for CacheStoreMode:
+
+[none]
+* *USE*: This mode instructs the JPA provider to use the second-level cache for caching entities during retrieval operations.
+It may also cache entities upon persist or merge operations depending on provider-specific configurations.
+
+* *REFRESH*: This mode directs the JPA provider to bypass the second-level cache during entity lifecycle operations.
+Entities fetched from the database are refreshed from the database each time they are accessed, ensuring that the cached data reflects the latest state in the database.
+
+* *BYPASS*: In this mode, the JPA provider bypasses the second-level cache entirely for all entity operations.
+This means that all operations interact directly with the database without checking or updating the cache.
+
+The `CacheStoreMode` can be changed for a specific EntityManager:
+
+[source,java]
+----
+    em.setProperty(PERSISTENCE_CACHE_STOREMODE, CacheStoreMode.BYPASS);
+----
+
+Setting can also be overridden for a specific retrieval operation.
+For example:
+
+[source,java]
+----
+    em.find(MyEntity2.class, 1L, Map.of(PERSISTENCE_CACHE_STOREMODE, CacheStoreMode.BYPASS));
+----
+
+== CacheRetrieveMode
+
+`CacheRetrieveMode`, on the other hand, defines how the JPA provider +++<u>retrieves</u>+++ entities +++<u>from</u>+++ the second-level cache during fetch operations.
+It affects whether the JPA provider retrieves entities from the cache only (if available) or always checks the database regardless of the cache state.
+
+There are typically two modes for CacheRetrieveMode:
+
+[none]
+* *USE*: When set to USE, the JPA provider first tries to retrieve entities from the second-level cache.
+If the entity is not found in the cache, then it queries the database to fetch the entity.
+
+* *BYPASS*: This mode instructs the JPA provider to bypass the second-level cache entirely during fetch operations.
+It always queries the database to fetch the entity, ignoring any cached data.
+
+The `CacheRetrieveMode` setting can also be overridden for a specific retrieval operation:
+
+[source,java]
+----
+    // Before executing a query:
+    query.setHint(PERSISTENCE_CACHE_RETRIEVEMODE, CacheRetrieveMode.BYPASS);
+
+    // For retrieval by type and primary key:
+    em.find(MyEntity2.class, 1L, Map.of(PERSISTENCE_CACHE_RETRIEVEMODE, CacheRetrieveMode.BYPASS));
+----
+
+[TIP]
+`CacheStoreMode` focuses on how the JPA provider manages caching during entity lifecycle operations (persist, merge, remove), whereas CacheRetrieveMode focuses on how the JPA provider fetches entities during retrieval operations (find, getReference).
+
+== Result List Query Support
+
+{product-name} support the option of also caching entities retrieved using the Query getResultList method.
+
+[CAUTION]
+Care should be taken when using this option as it can in theory overload the caching provider.
+
+The `PERSISTENCE_CACHE_RESULTLIST` property is used to hint to the query processor to store the results of a result list in the cache.
+
+[source,java]
+----
+    Query query = em.createQuery(vSQL);
+    query.setHint(PERSISTANT_CACHE_RESULTLIST,true);
+	query.getResultList();
+----

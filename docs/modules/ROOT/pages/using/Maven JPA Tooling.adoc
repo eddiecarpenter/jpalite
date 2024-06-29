@@ -1,3 +1,28 @@
 == Maven JPA Tooling
 
 include::../includes/attributes.adoc[]
+
+in order to manage an entity, all the JPA Tooling needs to be applied to all entities defined in the system.
+
+== Maven Plugin
+
+[source,xml]
+----
+<plugins>
+	<plugin>
+		<groupId>io.jpalite</groupId>
+		<artifactId>jpalite-maven-plugin</artifactId>
+		<version>${project.version}</version>
+		<executions>
+			<execution>
+				<phase>process-test-classes</phase>
+				<goals>
+					<goal>jpalite</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+</plugins>
+----
+
+ The above plugin snippet is required to perform the bytecode manipulation required.

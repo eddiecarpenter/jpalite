@@ -1,3 +1,0 @@
-= Find and Search Entities
-
-include::../../includes/attributes.adoc[]

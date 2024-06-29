@@ -7,7 +7,7 @@ JPALite supports all the JPA persistable types, which are:
 * Simple Java data types - Primitive types, Wrappers, String, date, and math.
 * Multivalue types - Collections, Maps and Arrays.
 * Miscellaneous types - Enum types types (user or system defined).
-* xref:entities/Atrribute Converters.adoc[Attribute Converters] - Allow the use to of custom types as attributes (Discussed separately).
+* xref:entities/Attribute Converters.adoc[Attribute Converters] - Allow the use to of custom types as attributes (Discussed separately).
 
 == Entity Classes
 

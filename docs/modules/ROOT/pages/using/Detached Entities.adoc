@@ -1,0 +1,90 @@
+# Detached Entities
+
+include::../includes/attributes.adoc[]
+
+*Detached* entity objects are objects in a special state in which they are not managed by any EntityManager but still represent objects in the database.
+Compared to managed entity objects, detached objects are limited in functionality:
+
+Many JPA methods do not accept detached objects (e.g. lock).
+Retrieval by navigation from detached objects is not supported, so only persistent fields that have been loaded before detachment should be used.
+Changes to detached entity objects are not stored in the database unless modified detached objects are merged back into an EntityManager to become managed again.
+
+== Detaching Entities in a Managed state
+
+=== Explicit Detach
+
+When a managed entity object is serialized and then deserialized, the deserialized entity object (but not the original serialized object) is constructed as a detached entity object since is not associated with any EntityManager.
+
+In addition, in JPA 2 we can detach an entity object by using the detach method:
+
+[source,java]
+----
+  em.detach(employee);
+----
+
+An `IllegalArgumentException` is thrown by detach if the argument is not an entity object
+
+=== Cascading Detach
+
+Marking a reference field with CascadeType.DETACH (or CascadeType.ALL, which includes DETACH) indicates that detach operations should be cascaded automatically to entity objects that are referenced by that field (multiple entity objects can be referenced by a collection field):
+
+[source,java]
+----
+@Entity class Employee {
+    //...
+    @OneToOne(cascade=CascadeType.DETACH)
+    private Address address;
+    //...
+}
+----
+
+In the example above, the Employee entity class contains an address field that references an instance of Address, which is another entity class.
+Due to the `CascadeType.DETACH` setting, when an Employee instance is detached the operation is automatically cascaded to the referenced Address instance, which is then automatically detached as well.
+Cascading may continue recursively when applicable (e.g. to entity objects that the Address object references, if any).
+
+=== Bulk Detach
+
+The following operations clear the entire EntityManager's persistence context and detach all managed entity objects:
+
+Invocation of the `close` method, which closes an EntityManager.
+Invocation of the `clear` method, which clears an EntityManager's persistence context.
+Rolling back a transaction - either by invocation of rollback or by a commit failure.
+
+[#Merging]
+== Attaching Entities that is detached
+
+=== Explicit Merge
+
+Detached objects can be attached to any EntityManager by using the merge method:
+
+[source,java]
+----
+  em.merge(employee);
+----
+
+The content of the specified detached entity object is copied into an existing managed entity object with the same identity (i.e. same type and primary key).
+If the EntityManager does not manage such an entity object yet, a new managed entity object is constructed.
+If the entity is in the Transient state (in other words, a new entity), the EntityManager will `persist` that entity.
+
+The detached object itself, however, remains unchanged and detached.
+
+An `IllegalArgumentException` is thrown by merge if the argument is not an instance of an entity class or it is a removed entity.
+A `TransactionRequiredException` is thrown if there is no active transaction when merge is called because operations that might modify the database require an active transaction.
+
+=== Cascading Merge
+
+Marking a reference field with `CascadeType.MERGE` (or `CascadeType.ALL`, which includes MERGE) indicates that merge operations should be cascaded automatically to entity objects that are referenced by that field (multiple entity objects can be referenced by a collection field):
+
+[source,java]
+----
+@Entity class Employee {
+    //...
+    @OneToOne(cascade=CascadeType.MERGE)
+    private Address address;
+    //...
+}
+----
+
+In the example above, the Employee entity class contains an address field that references an instance of Address, which is another entity class.
+Due to the `CascadeType.MERGE` setting, when an Employee instance is merged the operation is automatically cascaded to the referenced Address instance, which is then automatically merged as well.
+Cascading may continue recursively when applicable (e.g. to entity objects that the Address object references, if any).

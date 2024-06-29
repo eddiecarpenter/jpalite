@@ -1,0 +1,48 @@
+= Configuration
+
+include::../includes/attributes.adoc[]
+
+[cols="15%, 15%,15%,50%"]
+|===
+|Definition |Name |Default Value |Description
+
+|PERSISTENCE_CACHE_RETRIEVEMODE
+|jakarta.persistence.cache.retrieveMode
+|String
+|The retrieveMode hint supports the values *USE* and *BYPASS* and tells {product-name} if it shall *USE* the second-level cache to retrieve an entity or if it shall BYPASS it and get it directly from the database.
+
+|PERSISTENCE_CACHE_STOREMODE
+|jakarta.persistence.cache.storeMode
+|String
+|Valid values are USE, BYPASS or REFRESH. If the setting is not recognised, it defaults to USE. The storeMode hint controls the storage and update of the second-level cache.
+
+|Column 1, row 3
+|Column 2, row 3
+|Column 3, row 3
+|Column 4, row 3
+
+|Column 1, row 4
+|Column 2, row 4
+|Column 3, row 4
+|Column 4, row 4
+
+|Column 1, row 5
+|Column 2, row 5
+|Column 3, row 5
+|Column 4, row 5
+
+|Column 1, row 6
+|Column 2, row 6
+|Column 3, row 6
+|Column 4, row 6
+
+|Column 1, row 7
+|Column 2, row 7
+|Column 3, row 7
+|Column 4, row 7
+
+|Column 1, row 8
+|Column 2, row 8
+|Column 3, row 8
+|Column 4, row 8
+|===

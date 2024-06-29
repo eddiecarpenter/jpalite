@@ -19,5 +19,8 @@ runtime:
 asciidoc:
   attributes:
     kroki-fetch-diagram: true
+    page-pagination: ''
+    experimental: ''
+    
   extensions:
     - asciidoctor-kroki

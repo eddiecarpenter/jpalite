@@ -37,25 +37,25 @@ In this state the object is not yet associated with an EntityManager and has no 
 
 An entity object becomes Managed when it is persisted to the database via an EntityManager’s `persist` method, which must be invoked within an active transaction.
 On transaction `commit`, the owning EntityManager stores the new entity object to the database.
-More details on storing objects are provided in the #Storing Entities# section.
+More details on storing objects are provided in the xref:using/crud/Persisting Entities.adoc[Persisting Entities] section.
 
 Entity objects retrieved from the database by an EntityManager are also in the *Managed* state.
-Object retrieval is discussed in more detail in the #Retrieving Entities# section.
+Object retrieval is discussed in more detail in the xref:using/crud/Retrieving Entities.adoc[Retrieving Entities] section.
 
-If a managed entity object is modified within an active transaction the change is detected by the owning EntityManager and the update is propagated to the database on transaction `commit`.
-See the #Updating Entities# section for more information about making changes to entities.
+If a managed entity object is modified within an active transaction the change is detected by the owning EntityManager and the update is propagated to the database when the transaction is committed (calling the `commit` method).
+See the xref:using/crud/Update Entities.adoc[Updating Entities] section for more information about making changes to entities.
 
-A *managed* entity object can also be retrieved from the database and marked for `deletion`, using the EntityManager’s remove method within an active transaction.
+A *managed* entity object can also be retrieved from the database and marked for deletion, using the EntityManager’s remove method within an active transaction.
 The entity object changes its state from *Managed* to *Removed*, and is physically deleted from the database during commit.
-More details on object deletion are provided in the #Deleting Entities# section.
+More details on object deletion are provided in the xref:using/crud/Deleting Entities.adoc[Deleting Entities] section.
 
 The last state, *Detached*, represents entity objects that have been disconnected from the EntityManager.
 
 For instance, all the managed objects of an EntityManager become detached when the EntityManager is closed.
-Entity read outside an active transaction is also in a *Detached* state.
-Working with detached objects, including merging them back to an EntityManager, is discussed in the #Detached Entities# section.
+Entity retrieved outside an active transaction is also in a *Detached* state.
+Working with detached objects, including merging them back to an EntityManager, is discussed in the xref:using/Detached Entities.adoc[Detached Entities] section.
 
-## The Persistence Context (Level 1 Cache)
+== The Persistence Context (Level 1 Cache)
 
 The persistence context is the collection of all the managed objects of an EntityManager.
 
@@ -65,14 +65,13 @@ The main role of the persistence context is to make sure that a database entity 
 
 Every EntityManager manages its own persistence context.
 Therefore, a database object can be represented by different memory entity objects in different EntityManager instances.
-But retrieving the same database object more than once using the same EntityManager should always result in the same in-memory entity object.
+But retrieving the same database object more than once using the same EntityManager should always result in the same in-memory entity object, provided that a transaction was started for that EntityManager.
 
 Another way of looking at it is that the persistence context also functions as a local cache for a given EntityManager.
 
-By default, managed entity objects that have not been modified or removed during a transaction are held in the persistence context by weak references.
-Therefore, when a managed entity object is no longer in use by the application the garbage collector can discard it and it is automatically removed from the persistence context.
+Managed entity objects that have not been modified or removed during a transaction are held in the persistence context until the transaction is committed (or rolled back).
 
-The contains method can check if a specified entity object is in the persistence context:
+The `contains` method can check if a specified entity object is in the persistence context.
 
 [source,java]
 ----
@@ -86,6 +85,6 @@ The persistence context can be cleared by using the `clear` method:
     em.clear();
 ----
 
-When the persistence context is cleared all of its managed entities become detached and any changes to entity objects that have not been flushed to the database are discarded.
+When the persistence context is cleared, all of its managed entities become detached and any changes to entity objects that have not been flushed to the database are discarded.
 
-Detached entity objects are discussed in more detail in the #Detached Entities# section.
+Detached entity objects are discussed in more detail in the xref:using/Detached Entities.adoc[Detached Entities] section.

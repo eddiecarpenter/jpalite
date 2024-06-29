@@ -1,3 +1,139 @@
 = Persisting Entities
 
 include::../../includes/attributes.adoc[]
+
+New entity objects can be stored in the database either explicitly by invoking the `persist` method or implicitly as a result of a cascade operation.
+
+== Explicit Persist
+
+The following code stores an instance of the Employee entity class in the database:
+
+[source,java]
+----
+  Employee employee = new Employee();
+  employee.setName("John");
+  employee.setSurname("Doe");
+
+  em.getTransaction().begin();
+  em.persist(employee);
+  em.getTransaction().commit();
+----
+
+The Employee instance is constructed as an ordinary Java object and its initial state is *Transient*.
+An explicit call to `persist` associates the object with an owner EntityManager em and changes its state to *Managed*.
+
+The new entity object is stored in the database when the transaction is committed or if the EntityManager, `flush` method is invoked.
+
+[TIP]
+If the flushMode is set to FlushModeType.AUTO, the entity will be flushed when `persist` is invoked for that specific entity.
+
+An `IllegalArgumentException` is thrown by `persist` if the argument is not an instance of an entity class.
+
+A `TransactionRequiredException` is thrown if there is no active transaction when `persist` is called because operations that modify the database require an active transaction.
+
+If the database already contains another entity of the same type with the same primary key, an `EntityExistsException` is thrown.
+The exception is thrown either by `persist` (if that existing entity object is currently managed by the EntityManager) or by `commit`.
+
+== Cascaded Operations
+
+=== Referenced Embedded Objects
+
+The following code stores an Employee instance with a reference to an Address instance:
+
+[source,java]
+----
+  Employee employee = new Employee("John", "Doe");
+  Address address = new Address("Auckland", "New Zealand");
+  employee.setAddress(address);
+
+  em.getTransaction().begin();
+  em.persist(employee);
+  em.getTransaction().commit();
+----
+
+Instances of persistable types other than entity classes are automatically stored embedded in containing entity objects.
+Therefore, if Address is defined as an embeddable class the Employee entity object is automatically stored in the database with its Address instance as an embedded object.
+
+[IMPORTANT]
+Note that an embedded objects cannot be shared by multiple entity objects.
+Each containing entity object should have its own embedded objects.
+
+=== Referenced Entity Objects
+
+On the other hand, suppose that the Address class in the code above is defined as an entity class.
+In this case, the referenced Address instance is not stored in the database automatically with the referencing Employee instance.
+
+It is the application's responsibility to verify that when an object is stored in the database, the entire closure of entity objects that are reachable from that object by navigation through persistent reference fields is also stored in the database.
+This can be done either by explicit persist of every reachable object or alternatively by setting automatic cascading persist.
+
+=== Cascading Persist
+
+Marking a reference field with `CascadeType.PERSIST` (or `CascadeType.ALL` that also covers PERSIST) indicates that persist operations should be cascaded automatically to entity objects that are referenced by that field (multiple entity objects can be referenced by a collection field):
+
+[source,java]
+----
+@Entity
+class Employee {
+    //...
+    @OneToOne(cascade=CascadeType.PERSIST)
+    private Address address;
+    //...
+}
+----
+
+In the example above, the Employee entity class contains an address field that references an instance of Address, which is another entity class.
+Due to the `CascadeType.PERSIST` setting, when an Employee instance is persisted the operation is automatically cascaded to the referenced Address instance which is then automatically persisted without the need for a separate persist call for Address.
+
+Cascading may continue recursively when applicable (e.g. to entity objects that the Address object references, etc.).
+
+== Batch Store
+
+Storing a large number of entity objects requires special consideration.
+The combination of the clear and flush methods can be used to save memory in large transactions:
+
+[source,java]
+----
+  em.getTransaction().begin();
+  for (int i = 1; i <= 1000000; i++) {
+      Point point = new Point(i, i);
+      em.persist(point);
+      if ((i % 10000) == 0) {
+          em.flush();
+          em.clear();
+      }
+  }
+  em.getTransaction().commit();
+----
+
+Managed entity objects consume more memory than ordinary non-managed Java objects.
+Therefore, holding a million managed Point instances in the persistence context will consume too much memory.
+
+The sample code above clears the persistence context after every 10,000 persists.
+Updates are flushed to the database before clearing, otherwise they would be lost.
+
+Updates that are sent to the database using flush are considered temporary and are only visible to the owner EntityManager until a commit.
+With no explicit commit, these updates are later discarded.
+The combination of clear and flush enables moving the temporary updates from memory to the database.
+
+[NOTE]
+Flushing updates to the database is sometimes also useful before executing queries in order to get up to date results.
+
+Storing a large amount of entity objects can also be performed by multiple transactions:
+
+[source,java]
+----
+  em.getTransaction().begin();
+  for (int i = 1; i <= 1000000; i++) {
+      Point point = new Point(i, i);
+      em.persist(point);
+      if ((i % 10000) == 0) {
+          em.getTransaction().commit();
+          em.clear();
+          em.getTransaction().begin();
+      }
+  }
+  em.getTransaction().commit();
+----
+
+Splitting a batch store into multiple transactions is more efficient than using one transaction with multiple invocations of the flush and clear methods.
+So using multiple transactions is preferred when applicable.

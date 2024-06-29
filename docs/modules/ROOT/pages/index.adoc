@@ -16,8 +16,7 @@ The aim is not to provide a detailed architectural design but rather to provide 
 
 == Prerequisite Knowledge
 
-Prior knowledge of database programming (SQL, JDBC, ORM or JPA) is not required but will be helpful to follow this documentation.
-Still, a strong background and understanding of the Java language are essential.
+The reader must have a working knowledge of JPA and Java.
 
 === Further Reading and Resources
 
@@ -37,4 +36,4 @@ If you get to a point where you need a specific feature not currently supported,
 === Known JPA features not currently supported
 
 1. Criteria Queries
-2. Procedure Queries
+2. Stored Procedure Queries
