@@ -1,0 +1,159 @@
+== Locking
+
+include::../includes/attributes.adoc[]
+
+{product-name} supports both *optimistic locking* and *pessimistic locking*.
+Locking is essential to avoid update collisions resulting from simultaneous updates to the same data by two concurrent users.
+
+Optimistic locking is applied on transaction commit.
+Any database object that has to be updated or deleted is checked.
+An exception is thrown if it is found that an update is being performed on an old version of a database object, for which another update has already been committed by another transaction.
+
+In {product-name}, optimistic locking is enabled by default and fully automatic if the entity contains a fields annotated as a version field.
+Optimistic locking should be the first choice for most applications, since compared to pessimistic locking it is easier to use and more efficient.
+
+In the rare cases in which update collision must be revealed earlier (before transaction commit) pessimistic locking can be used.
+When using pessimistic locking, database objects are locked during the transaction and lock conflicts, if they happen, are detected earlier.
+
+== Optimistic Locking
+
+As indicated above, an Entity must have a version field before it can be used in an optimistic locking scheme. {product-name} manages the version field and will increment it for every update.
+
+During commit (and flush), {product-name} checks every entity object that has to be updated or deleted, and compares the version number of that object in the database to the version number of the in-memory object being updated.
+
+The transaction fails and an `OptimisticLockException` is thrown if the version numbers do not match, indicating that the object has been modified by another user (using another EntityManager) since it was retrieved by the current updater.
+
+== Pessimistic Locking
+
+The main supported pessimistic lock modes are:
+
+* *PESSIMISTIC_READ* - which represents a shared lock.
+* *PESSIMISTIC_WRITE* - which represents an exclusive lock.
+* *PESSIMISTIC_FORCE_INCREMENT* - same as write but will also update the version column.
+
+An entity object can be locked explicitly by the lock method:
+
+[source,java]
+----
+  em.lock(employee, LockModeType.PESSIMISTIC_WRITE);
+----
+
+The first argument is an entity object.
+The second argument is the requested lock mode.
+
+A `TransactionRequiredException` is thrown if there is no active transaction when lock is called because explicit locking requires an active transaction.
+
+A `LockTimeoutException` is thrown if the requested pessimistic lock cannot be granted:
+
+A `PESSIMISTIC_READ` lock request fails if another user currently holds a `PESSIMISTIC_WRITE` lock on that database object.
+A `PESSIMISTIC_WRITE` lock request fails if another user currently holds either a `PESSIMISTIC_WRITE` lock or a PESSIMISTIC_READ lock on that database object.
+
+The actual lock management is done by the database (Postgres, MySQL, etc).
+
+For example, consider the following code fragment:
+
+[source,java]
+----
+  em1.lock(e1, lockMode1);
+  em2.lock(e2, lockMode2);
+----
+
+em1 and em2 are two EntityManager instances that manage the same Employee database object, which is referenced as e1 by em1 and as e2 by em2 (notice that e1 and e2 are two in-memory entity objects that represent one database object).
+
+If both lockMode1 and lockMode2 are `PESSIMISTIC_READ` - these lock requests should succeed.
+Any other combination of pessimistic lock modes, which also includes `PESSIMISTIC_WRITE`, will cause a `LockTimeoutException` (on the second lock request).
+
+== Pessimistic Lock Timeout
+
+By default, when a pessimistic lock conflict occurs a LockTimeoutException is thrown immediately.
+The `JPAEntityManager.PERSISTENCE_LOCK_TIMEOUT` ("jakarta.persistence.lock.timeout") hint can be set to allow waiting for a pessimistic lock for a specified number of milliseconds.
+
+For an EntityManagerFactory - using the createEntityManagerFactory method:
+
+[source,java]
+----
+  Map<String,Object> properties = new HashMap();
+  properties.put(JPAEntityManager.PERSISTENCE_LOCK_TIMEOUT, 2000);
+  EntityManagerFactory emf =
+      Persistence.createEntityManagerFactory("pu", properties);
+----
+
+For an EntityManager - using the createEntityManager method:
+
+[source,java]
+----
+  Map<String,Object> properties = new HashMap();
+  properties.put(JPAEntityManager.PERSISTENCE_LOCK_TIMEOUT, 3000);
+  EntityManager em = emf.createEntityManager(properties);
+----
+
+or using the setProperty method:
+
+[source,java]
+----
+  em.setProperty(JPAEntityManager.PERSISTENCE_LOCK_TIMEOUT, 4000);
+----
+
+In addition, the hint can be set for a specific retrieval operation or query.
+
+== Releasing a Pessimistic Lock
+
+Pessimistic locks are automatically released at the end of the transaction (using either commit or rollback).
+
+ObjectDB supports also releasing a lock explicitly while the transaction is active, as so:
+
+[source,java]
+----
+  em.lock(employee, LockModeType.NONE);
+----
+
+== Other Explicit Lock Modes
+
+In addition to the two main pessimistic modes (`PESSIMISTIC_WRITE` and `PESSIMISTIC_READ`, which are discussed above), JPA defines additional lock modes that can also be specified as arguments for the lock method to obtain special effects:
+
+`OPTIMISTIC` (formerly `READ`) `OPTIMISTIC_FORCE_INCREMENT` (formerly `WRITE`) `PESSIMISTIC_FORCE_INCREMENT` Since optimistic locking is applied automatically by {product-name} to every entity object that has a version field, the `OPTIMISTIC` lock mode has no effect and, if specified, is silently ignored by {product-name}.
+
+The `OPTIMISTIC_FORCE_INCREMENT` mode affects only clean (non dirty) entity objects.
+Explicit lock at that mode marks the clean entity object as modified (dirty) and increases its version number by 1.
+
+The `PESSIMISTIC_FORCE_INCREMENT` mode is equivalent to the `PESSIMISTIC_WRITE` mode with the addition that it marks a clean entity object as dirty and increases its version number by one (i.e. it combines `PESSIMISTIC_WRITE` with `OPTIMISTIC_FORCE_INCREMENT`).
+
+== Locking during Retrieval
+
+JPA 2 provides various methods for locking entity objects when they are retrieved from the database.
+In addition to improving efficiency (relative to a retrieval followed by a separate lock), these methods perform retrieval and locking as one atomic operation.
+
+For example, the find method has a form that accepts a lock mode:
+
+[source,java]
+----
+  Employee employee = em.find(
+      Employee.class, 1, LockModeType.PESSIMISTIC_WRITE);
+----
+
+Similarly, the refresh method can also receive a lock mode:
+
+[source,java]
+----
+  em.refresh(employee, LockModeType.PESSIMISTIC_WRITE);
+----
+
+A lock mode can also be set for a query in order to lock all the query result objects.
+
+When a retrieval operation includes pessimistic locking, timeout can be specified as a property.
+For example:
+
+[source,java]
+----
+  Map<String,Object> properties = new HashMap();
+  properties.put("javax.persistence.lock.timeout", 2000);
+
+  Employee employee = em.find(
+      Employee.class, 1, LockModeType.PESSIMISTIC_WRITE, properties);
+
+  //...
+
+  em.refresh(employee, LockModeType.PESSIMISTIC_WRITE, properties);
+----
+
+Setting timeout at the operation level overrides setting in higher scopes.

@@ -1,0 +1,187 @@
+= Attribute Converters
+
+include::../includes/attributes.adoc[]
+
+If the attribute type is not natively supported by {product-name} a user need to provide a converter with mappings for converting attributes to database columns and database columns to attributes.
+
+[TIP]
+All the native attributes in {product-name} are implemented as attribute converters, and the default implementations could be replaced by a developer if the need arises.
+
+== Field Attribute Converter
+
+{product-name} extends the Jakarta AttributeConverter interface in FieldAttributeType.
+The Field Attribute Type interface adds four methods that are used to serialise and de-serialise an entity when storing it in cache, and one method to read the attribute from a JDBC ResultSet.
+The `toJson` and `fromJson` methods are used to serialise the entity to and from JSON and the `writeField` and `readField` is used to serialise the entity to a byte array.
+
+[source,java]
+----
+public interface FieldConvertType<X, Y> extends AttributeConverter<X, Y>
+{
+	Class<?> getAttributeType();
+
+	void toJson(JsonGenerator jsonGenerator, X value) throws IOException;
+
+	X fromJson(JsonNode json);
+
+	void writeField(Object value, DataOutputStream out) throws IOException;
+
+	X readField(DataInputStream in) throws IOException;
+
+	default X convertToEntityAttribute(ResultSet resultSet, int column) throws SQLException
+	{
+		return (resultSet.wasNull() ? null : convertToEntityAttribute((Y) resultSet.getObject(column)));
+	}
+}
+----
+
+[IMPORTANT]
+All auto applied converters must be listed as an SPI service under *META-INF/service/io.jpalite.FieldConvertType*
+
+== Example
+
+As an example, let's assume we have an EMPLOYEE table that has a column PERSON of type JSON.
+{product-name} do not have native support for JSON (unless you define the attribute with type String), and so one would have to write a converter.
+
+Given the following POJO class
+
+[source,java]
+----
+import lombok.Builder;
+import lombok.Data;
+import lombok.extern.jackson.Jacksonized;
+import lombok.extern.slf4j.Slf4j;
+
+@Data
+@Builder(builderMethodName = "newBuilder", setterPrefix = "set")
+@Jacksonized
+@Slf4j
+public class PersonName  {
+    private String name;
+    private String surname;
+
+    // getters and setters
+}
+----
+
+and defined Entity to map the EMPLOYEE table
+
+[source,java]
+----
+@Entity(name = "PersonTable")
+@Table(name="EMPLOYEE")
+public class Employee {
+	@Column(name="PERSON")
+    private PersonName personName;
+    //...
+}
+----
+
+Now we need to create a converter that transforms the PersonName attribute to a database column and vice-versa as {product-name} does not "know" how to handle the `personName` attribute.
+In our case, we’ll convert the attribute to a JSON String value that contains both name and surname fields.
+
+To do so we have to annotate our converter class with @Converter and implement the FieldConvertType interface.
+We’ll parametrise the interface with the types of the class and the database column, in that order:
+
+[source,java]
+----
+import ...
+@Converter(autoApply = false)
+public class PersonNameConverter implements FieldConvertType<PersonName, String>
+{
+	private final ObjectMapper mapper;
+
+	public SubscriberCounterModelCustomType()
+	{
+		mapper = new ObjectMapper(JsonFactory.builder().build());
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.registerModule(new JavaTimeModule());
+	}
+
+	@Override
+	public Class<PersonName> getAttributeType()
+	{
+		return PersonName.class;
+	}
+
+	@Override
+	public void toJson(JsonGenerator jsonGenerator, PersonName value) throws IOException
+	{
+		jsonGenerator.writeObject(value);
+	}
+
+	@Override
+	public PersonName fromJson(JsonNode json)
+	{
+		return mapper.convertValue(json, PersonName.class);
+	}
+
+	@Override
+	public void writeField(Object value, DataOutputStream out) throws IOException
+	{
+		out.writeUTF(convertToDatabaseColumn((PersonName) value));
+	}
+
+	@Override
+	public SubscriberCounterModel readField(DataInputStream in) throws IOException
+	{
+		return convertToEntityAttribute(in.readUTF());
+	}
+
+	@Override
+	public PersonName convertToEntityAttribute(ResultSet pResultSet, int pColumn) throws SQLException
+	{
+		String vData = pResultSet.getString(pColumn);
+		if (pResultSet.wasNull() || vData == null) {
+			return PersonName.newBuilder().build();
+		}
+		return convertToEntityAttribute(vData);
+	}
+
+	@Override
+	public String convertToDatabaseColumn(PersonName attribute)
+	{
+		try {
+			return mapper.writeValueAsString(attribute);
+		}
+		catch (IOException ex) {
+			throw new EntityMapException("Error streaming attribute to JSON String", ex);
+		}
+	}
+
+	@Override
+	public PersonName convertToEntityAttribute(String jsonValue)
+	{
+		try {
+			return mapper.readValue(jsonValue, PersonName.class);
+		}
+		catch (IOException ex) {
+			LoggerFactory.getLogger(getClass()).warn("Error reading JSON field", ex);
+		}
+
+		return SubscriberCounterModel.newBuilder().build();
+	}
+}
+----
+
+Notice that we used Jackson to convert the PersonName object to JSON and create a new PersonName object from a JSON string.
+
+In order to use the converter we need to annotate the attribute with the `@Convert` annotation and specify the converter class that is to be used to do the conversion.
+
+[source,java]
+----
+@Entity(name = "PersonTable")
+public class Person {
+
+    @Convert(converter = PersonNameConverter.class)
+    private PersonName personName;
+
+    // ...
+}
+----
+
+[TIP]
+If the autoApply value in the @Converter annotation at the top of the `PersonNameConverter` class were set to TRUE, JPALite would have detected this converter and auto applied it to the field.
+The @Convert annotation in that case is then not required.
+
+[NOTE]
+The `@Convert` annotation overrides the system default converters and will *force* {product-name} to use the specified converter class.

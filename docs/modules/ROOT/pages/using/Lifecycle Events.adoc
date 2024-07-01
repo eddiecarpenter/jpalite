@@ -1,0 +1,56 @@
+= JPA Lifecycle Events
+
+include::../includes/attributes.adoc[]
+
+Callback methods are user defined methods that are attached to entity lifecycle events and are invoked automatically by JPA when these events occur.
+
+== Internal Callback Methods
+
+Internal callback methods are methods that are defined within an entity class.
+For example, the following entity class defines all the supported callback methods with empty implementations:
+
+[source,java]
+----
+@Entity
+public static class MyEntityWithCallbacks {
+    @PrePersist
+    void onPrePersist() {}
+    @PostPersist
+    void onPostPersist() {}
+    @PostLoad
+    void onPostLoad() {}
+    @PreUpdate
+    void onPreUpdate() {}
+    @PostUpdate
+    void onPostUpdate() {}
+    @PreRemove
+    void onPreRemove() {}
+    @PostRemove
+    void onPostRemove() {}
+}
+----
+
+Internal callback methods should always return void and take no arguments.
+They can have any name and any access level (public, protected, package and private) but should not be static.
+
+The annotation specifies when the callback method is invoked:
+
+* *@PrePersist* - before a new entity is persisted (added to the EntityManager).
+* *@PostPersist* - after storing a new entity in the database (during commit or flush).
+* *@PostLoad* - after an entity has been retrieved from the database.
+* *@PreUpdate* - when an entity is identified as modified by the EntityManager.
+* *@PostUpdate* - after updating an entity in the database (during commit or flush).
+* *@PreRemove* - when an entity is marked for removal in the EntityManager.
+* *@PostRemove* - after deleting an entity from the database (during commit or flush).
+An entity class may include callback methods for any subset or combination of lifecycle events but no more than one callback method for the same event.
+However, the same method may be used for multiple callback events by marking it with more than one annotation.
+
+== Implementation Restrictions
+
+To avoid conflicts with the original database operation that fires the entity lifecycle event (which is still in progress) callback methods should not call `EntityManager` or `Query methods` and should not access any other entity objects.
+
+If a callback method throws an exception within an active transaction, the transaction is marked for rollback and no more callback methods are invoked for that operation.
+
+== Listeners and External Callback Methods
+
+{product-name} do not have support for external callback listeners.

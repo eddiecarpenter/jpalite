@@ -1,0 +1,90 @@
+== Entity LifeCycle
+
+include::../includes/attributes.adoc[]
+
+Entity objects are in-memory instances of entity classes (persistable user defined classes), which can represent physical objects in the database.
+
+== Entity Object Life Cycle
+
+The life cycle of entity objects consists of four states: New, Managed, Removed and Detached.
+
+[ditaa]
+....
+                                  /----------\
+                                  | Detached |
+                                  \----------/
+                                     ^   |
+                           detach()  |   |
+                            close()  |   | merge()
+                            clear()  |   |
+                                     |   v             +------+
+ new() /-----------\ persist()    /---------\  flush() |{s}   |
+ ----->| Transient |------------->| Managed |--------->|  DB  |
+       \-----------/              \---------/          +------+
+                                     |   ^                 ^
+                             remove()|   |persist()        |
+                                     |   |                 |
+                                     v   |          flush()|
+                                  /---------\              |
+                                  | Removed |--------------+
+                                  \---------/
+....
+
+The diagram illustrates the methods in the EntityManager that has an effect on the lifecycle state of entity.
+
+When an entity object is initially created its state is *Transient*.
+In this state the object is not yet associated with an EntityManager and has no representation in the database.
+
+An entity object becomes Managed when it is persisted to the database via an EntityManager’s `persist` method, which must be invoked within an active transaction.
+On transaction `commit`, the owning EntityManager stores the new entity object to the database.
+More details on storing objects are provided in the xref:using/crud/Persisting Entities.adoc[Persisting Entities] section.
+
+Entity objects retrieved from the database by an EntityManager are also in the *Managed* state.
+Object retrieval is discussed in more detail in the xref:using/crud/Retrieving Entities.adoc[Retrieving Entities] section.
+
+If a managed entity object is modified within an active transaction the change is detected by the owning EntityManager and the update is propagated to the database when the transaction is committed (calling the `commit` method).
+See the xref:using/crud/Update Entities.adoc[Updating Entities] section for more information about making changes to entities.
+
+A *managed* entity object can also be retrieved from the database and marked for deletion, using the EntityManager’s remove method within an active transaction.
+The entity object changes its state from *Managed* to *Removed*, and is physically deleted from the database during commit.
+More details on object deletion are provided in the xref:using/crud/Deleting Entities.adoc[Deleting Entities] section.
+
+The last state, *Detached*, represents entity objects that have been disconnected from the EntityManager.
+
+For instance, all the managed objects of an EntityManager become detached when the EntityManager is closed.
+Entity retrieved outside an active transaction is also in a *Detached* state.
+Working with detached objects, including merging them back to an EntityManager, is discussed in the xref:using/Detached Entities.adoc[Detached Entities] section.
+
+== The Persistence Context (Level 1 Cache)
+
+The persistence context is the collection of all the managed objects of an EntityManager.
+
+If an entity object that has to be retrieved already exists in the persistence context, the existing managed entity object is returned without actually accessing the database (except retrieval by refresh, which always requires accessing the database).
+
+The main role of the persistence context is to make sure that a database entity object is represented by no more than one in-memory entity object within the same EntityManager.
+
+Every EntityManager manages its own persistence context.
+Therefore, a database object can be represented by different memory entity objects in different EntityManager instances.
+But retrieving the same database object more than once using the same EntityManager should always result in the same in-memory entity object, provided that a transaction was started for that EntityManager.
+
+Another way of looking at it is that the persistence context also functions as a local cache for a given EntityManager.
+
+Managed entity objects that have not been modified or removed during a transaction are held in the persistence context until the transaction is committed (or rolled back).
+
+The `contains` method can check if a specified entity object is in the persistence context.
+
+[source,java]
+----
+    boolean isManaged = em.contains(employee);
+----
+
+The persistence context can be cleared by using the `clear` method:
+
+[source,java]
+----
+    em.clear();
+----
+
+When the persistence context is cleared, all of its managed entities become detached and any changes to entity objects that have not been flushed to the database are discarded.
+
+Detached entity objects are discussed in more detail in the xref:using/Detached Entities.adoc[Detached Entities] section.

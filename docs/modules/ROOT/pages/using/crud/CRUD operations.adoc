@@ -1,0 +1,10 @@
+= CRUD Operations
+
+include::../../includes/attributes.adoc[]
+
+The following subsections explain how to use {product-name} for CRUD database operations:
+
+* xref:using/crud/Persisting Entities.adoc[Persisting JPA Entity Objects]
+* xref:using/crud/Retrieving Entities.adoc[Retrieving JPA Entity Objects]
+* xref:using/crud/Update Entities.adoc[Updating JPA Entity Objects]
+* xref:using/crud/Deleting Entities.adoc[Deleting JPA Entity Objects]

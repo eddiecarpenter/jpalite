@@ -1,0 +1,178 @@
+= JPAEntity Superclass
+
+include::../includes/attributes.adoc[]
+
+All of the JPA magic is to be found in the implementation of the JPAEntityImpl class.
+The xref:using/Maven JPA Tooling.adoc[Maven JPA Tooling] discovers all the entities and using bytecode manipulation changes all the classes to extend JPAEntityImpl (which implements the JPAEntity interface)
+
+The JPAEntityImpl is how the EntityManager assigns the JPA features to an entity.
+
+The JPAEntityImpl implements the JPAEntity interface to exposes the methods described in this document.
+
+[WARNING]
+Care should be taken in calling the JPA methods as most of the methods were designed to be invoked by the EntityManger and not at an application level.
+This is especially true for methods that updates the entity as this could lead to the lost of data.
+
+== State and metadata
+
+[none]
+* *EntityMetaData<?> _getMetaData()* +
+Return the metadata for the entity
+
+* *LoadState _loadState()* +
+Return the load state of the entity
+
+* *EntityState _getEntityState()* +
+Get the current state of the entity
+
+* *void _setEntityState(EntityState newState)* +
+Change the entity's state
+
+* *PersistenceContext _getPersistenceContext()* +
+Set the PersistenceContext associated with the entity if the state is `EntityState.ATTACHED`.
+If the entity state is not `EntityState.ATTACHED` the result is * undetermined.
+
+* *void _setPersistenceContext(PersistenceContext persistenceContext)* +
+Set the persistence context for the entity.
+Setting this value will change the entity state to `ATTACHED`.
+Setting the PersistenceContext to NULL will changed the entity state to `DETACHED`.
+
+* *PersistenceAction _getPendingAction()* +
+Get the current pending action for the entity * *void _setPendingAction(PersistenceAction pendingAction)* +
+Set the pending action
+
+* *boolean _entityEquals(JPAEntity entity)* +
+Compare the primary keys of the to entities
+
+* *String toString()* +
+Return the Entity in a string format.
+
+== Locking
+
+* *LockModeType _getLockMode()* +
+Get the lock mode for the entity
+
+* *void _setLockMode(LockModeType lockMode)* +
+Set the entity's lock mode
+
+== Change Tracking
+
+The JPA tool modifies all the `setters` in the entity to call the _markField method to the field as modified before setting the field.
+
+The following methods are available to query the modification state of an entity:
+
+[none]
+* *Set<String> _getModifiedFields()* +
+Returns a String Set of modified field names.
+
+* *void _clearModified()* +
+Clear entities modification state.
+Be careful here as the fields are still changed, but will the changes will not be committed to the database.
+
+* *boolean _isFieldModified(String fieldName)* +
+Checks if a specific field is changed.
+
+* *void _markField(String fieldName)* +
+Mark a field as modified.
+
+* *boolean _isEntityModified()* +
+Check to verify if there are any modified fields
+
+== Lazy Fetching
+
+The JPA tool modifies all the `getters` in the entity to call the _lazyFetch method to intercept lazy loaded fields (or entities).
+
+The following methods are available to query the lazy state of an entity and its fields:
+
+[none]
+* *boolean _isLazyLoaded(String fieldName)* +
+Check if the field in entity is lazily loaded.
+
+* *boolean _isLazyLoaded()* +
+Mark an `entity` as being loaded lazily.
+
+* *void _makeReference(Object primaryKey)* +
+Configure new entity as a reference using the given primary key (Entity is lazy loaded)
+
+* *void _lazyFetchAll(boolean forceEagerLoad)* +
+Force a load of all fields that are currently lazily load but that is defined to be eagerly loaded.
+If `forceEagerLoad` is set to true, all fields are loaded regardless of their fetch type setting.
+
+* *void _lazyFetch(String fieldName)* +
+Reload a specific field from storage
+
+== Accessing Entity Values
+
+* *<X> X _getDBValue(@Nonnull String fieldName)* +
+Get the value of a specific field in it's database format.
+
+* *Object _getPrimaryKey()* +
+Return the value of the primary key for the entity.
+The returned object should not be modified and must be seen as immutable.
+
+* *void _setPrimaryKey(Object primaryKey)* +
+Set the entity's id fields equal to the primary key object.
+This can only be done on a new entity that has a `TRANSIENT` state and an `IllegalStateException` exception will be thrown if not the case.
+
+* *void _updateRestrictedField(Consumer<JPAEntity> method)* +
+Allow the caller to update a restricted field (VERSION and NON-UPDATABLE).
+This purpose of this method is for internal use and only be used if you know what you are doing
+
+* *void _replaceWith(JPAEntity entity)* +
+Copy the content of entity to the current one replacing all values and states.
+After the copy, entity will be * detached from the context and this entity will be attached to the context.
+The current entity cannot be attached * and entity must be attached
+
+[none]
+* *void _refreshEntity(Map<String, Object> properties)* +
+Reload an entity replacing all values.
+This is the same as calling em.refresh on an entity.
+
+* *void _merge(JPAEntity entity)* +
+Merged the fields that was changed supplied entity into the current instance.
+The two entities must be of same type and an IllegalArgumentException exception is thrown if they differ.
+The given entity and the current entity must have the same primary keys and an `EntityMapException` exception will be throw if not.
+If the entity has a version field, the version for the two entities must be the same else an OptimisticLockException exception is thrown.
+
+* *JPAEntity _clone()* +
+Clone the entity into a new entity.
+The new entity will be in a transient state where all the fields are set to the values found the cloned entity.
+[NOTE]
+The identity and version fields are not cloned!
+
+== Object Relational Mapping
+
+* *void _mapResultSet(String colPrefix, ResultSet resultSet)* +
+Take the given result set and read and set all the fields in the entity from it.
+The modified flags for the fields read from the result set are cleared and all changes to the entity is lost.
+The colPrefix value is used to map PSQL queries.
+
+* *void _deserialize(byte[] bytes)* +
+Deserialize the entity from a byte array.
+
+* *byte[] _serializes()* +
+Serialise the entity into a byte array and returns the array
+
+* *String _toJson()* +
+Retrieve content of the JPAEntity as a JSON formatted string
+
+* *void _fromJson(String jsonStr)* +
+Load the entity from a JSON string
+
+== Entity Restrictions
+
+Entities in {product-name} has the following restrictions, mainly due to the byte code manipulation done by the JPA tooling.
+
+. No superclass allowed as the JPA tooling will extend the entity from JPAEntityImpl
+. `toString` will be replace and be pointed to JPAEntity
+. `equals` will be replace and be pointed to JPAEntity
+
+== JPAEntity Interface
+
+[%collapsible]
+====
+[source,java]
+----
+include::../../examples/JPAEntity.java
+----
+====

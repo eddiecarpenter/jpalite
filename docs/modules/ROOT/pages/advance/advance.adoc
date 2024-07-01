@@ -1,0 +1,7 @@
+= Advance
+
+This section discusses advanced JPA topics:
+
+** xref:advance/configuration.adoc[Configuration]
+** xref:advance/Entity Metadata.adoc[Entity Metadata]
+** xref:advance/JPAEntity Superclass.adoc[JPAEntity Superclass]

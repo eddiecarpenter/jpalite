@@ -1,0 +1,26 @@
+== Entity and Field Metadata
+
+include::../includes/attributes.adoc[]
+
+The Entity Metadata interface is self-explanatory and provides the application access to inner definitions of the entity.
+Similar, an EntityField class represents the definitions for each field found in the Entity.
+
+== EntityMetaData Interface
+
+[%collapsible]
+====
+[source,java]
+----
+include::../../examples/EntityMetaData.java[]
+----
+====
+
+== EntityField Interface
+
+[%collapsible]
+====
+[source,java]
+----
+include::../../examples/EntityField.java[]
+----
+====

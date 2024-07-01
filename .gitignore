@@ -1,0 +1,19 @@
+.settings
+.project
+.classpath
+.metadata
+*.stale
+
+#npm
+docs/package-lock.json
+docs/node_modules/
+docs/build/
+docs/cache/
+
+# ItelliJ
+.idea/
+*.iml
+
+# Silly Mac OSX stuff
+.DS_Store
+**/target/

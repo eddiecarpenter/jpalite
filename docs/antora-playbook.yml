@@ -1,0 +1,26 @@
+site:
+  title: Offline AJPLite Docs
+  start_page: jpalite::index.adoc
+
+content:
+  sources:
+    - url: .. # common module containing just the main index
+      branches: HEAD
+      start_path: docs
+ui:
+  bundle:
+    url: https://github.com/eddiecarpenter/antora-ui-go-docs/releases/latest/download/ui-bundle.zip
+    snapshot: true
+
+runtime:
+  fetch: false
+  cache_dir: ./cache
+
+asciidoc:
+  attributes:
+    kroki-fetch-diagram: true
+    page-pagination: ''
+    experimental: ''
+    
+  extensions:
+    - asciidoctor-kroki

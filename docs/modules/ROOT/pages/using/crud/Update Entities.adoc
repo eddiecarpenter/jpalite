@@ -1,0 +1,44 @@
+= Update Entities
+
+include::../../includes/attributes.adoc[]
+
+Modifying existing entity objects that are stored in the database is based on transparent persistence, which means that changes are detected and handled automatically.
+
+== Transparent Update
+
+Once an entity object is retrieved from the database (no matter which way) it can simply be modified in memory from inside +++<u>an active transaction</u>+++:
+
+[source,java]
+----
+  Employee employee = em.find(Employee.class, 1);
+
+  em.getTransaction().begin();
+  employee.setNickname("Joe the Plumber");
+  em.getTransaction().commit();
+----
+
+The entity object is physically updated in the database when the transaction is committed.
+If the transaction is rolled back and not committed the update is discarded.
+
+On `commit` the persist operation can be cascaded from all the entity objects that have to be stored in the database, including from all the modified entity objects.
+Therefore, entity objects that are referenced from modified entity objects by fields that are marked with `CascadeType.PERSIST` or `CascadeType.ALL` are also persisted.
+
+== Automatic Change Tracking
+
+As shown above, an update is achieved by modifying a managed entity object from within an active transaction.
++++<u>No EntityManager's method</u>+++ is invoked to effect the update.
+On commit or flush the EntityManager will generate an update statement only containing those fields that were change.
+
+However, detecting changes to arrays, lists, sets and maps cannot be detected and requires special attention.
+
+[source,java]
+----
+    Employee employee = em.find(Employee.class, 1);
+
+    em.getTransaction().begin();
+    employee.projects.add(new Project()); // not detected automatically
+    ((JPAEntity)employee)._markField("projects"); // reported as dirty
+    em.getTransaction().commit();
+----
+
+As demonstrated above, changes to a list are not detected automatically but it is possible to report a change explicitly by invoking the JPAEntity `_markField` method.

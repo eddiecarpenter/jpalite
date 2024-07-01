@@ -1,0 +1,17 @@
+= Getting Started Quickly
+
+This section demonstrates basic JPA concepts through a simple example program.
+After reading this section you should be able to write basic programs performing CRUD operations (Create/Store, Retrieve, Update and Delete) on a database.
+
+The example program that this section presents manages a simple database that contains points in the plane.
+
+Each point is represented by an object with two int fields, `int x` and `int y`, that hold the point's x and y coordinates.
+
+The program demonstrates CRUD database operations by storing, retrieving, updating and deleting Point objects.
+
+This chapter contains the following sections:
+
+* xref:quickstart/Defining Entity Class.adoc[Defining Entity Class]
+* xref:quickstart/Defining Persistence Unit.adoc[Defining Persistence Unit]
+* xref:quickstart/CRUD Database Operations.adoc[CRUD Database Operations]
+* xref:quickstart/Next Steps.adoc[Next Step]

@@ -1,0 +1,14 @@
+= Entity Classes
+
+include::../includes/attributes.adoc[]
+
+JPA Entity classes are user-defined classes whose instances can be stored in a database.
+To store data in a database using JPA you have to define entity classes that represent your application data object model.
+
+See xref:advance/JPAEntity Superclass.adoc[JPAEntity Superclass] for a list of restrictions and constrains.
+
+This section contains the following subsections:
+
+* xref:entities/JPA Persistable Types.adoc[JPA Persistable Types]
+* xref:entities/Entity Fields.adoc[Entity Fields]
+* xref:entities/Primary Keys.adoc[Primary Keys]

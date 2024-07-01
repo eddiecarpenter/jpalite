@@ -1,0 +1,115 @@
+= Entity Fields
+
+include::../includes/attributes.adoc[]
+
+{product-name} does not support XML based definitions for entity class fields, and only JPA 2 annotation-based definitions are used.
+
+{product-name} further does not implement or use all the annotations, specifically not those needed to create or update a database schema.
+
+[TIP]
+We recommend that you should rather use a product like https://flywaydb.org[Flyway] to create and update your database rather than using the JPA stack to do it.
+
+== Fields of Persistable
+
+Looking specifically at fields of persistable user-defined classes can be classified into the following five groups:
+
+* Transient or ignored fields
+* Persistent fields Primary key (ID) fields
+* Version field
+
+== Transient or Ignored Fields
+
+Transient entity fields are fields that do not participate in persistence, and their values are never stored in the database (similar to transient fields in Java that do not participate in serialisation).
+Static and final entity fields are always considered to be transient.
+Other fields can be declared explicitly as transient using either the Java `transient` modifier (which also affects serialisation) or the JPA `@Transient` annotation.
+
+== Database Persistent Fields
+
+Database based entities are designated by the `@Table` annotation and all fields that have a `@Column` annotation (except for static and final fields) will be persisted in the database.
+
+{product-name} expects that all the annotations are done at a field level and is placing it at a method level not currently supported.
+The use of Lombok `@Getter` and `@Setter` annotations to generate the getters and setters is encouraged as it simplifies the entity class and improves readability.
+
+== @Entity Annotation
+
+The use of the `@Entity` annotation signifies that the POJO class is an entity.
+Entity classes are represented in JPQL queries by entity names.
+By default, the entity name is the unqualified name of the entity class (i.e. the short class name excluding the package name).
+A different entity name can be set explicitly by using the name attribute of the Entity annotation.
+Entity names must be system-wide unique and can the name not be reserved literal in the JPA language.
+
+== @Table Annotation
+
+The `@Table` annotation allows you to specify the details of the table that will be used to persist the entity in the database.
+If this annotation is not set, the entity cannot be persisted in the RDBS database.
+The `@Table` annotation provides five attributes, allowing you to specify the *name* of the table, its *catalogue*, and its *schema*, enforce *unique* constraints on columns and specify the *indexes* in the table.
+
+[NOTE]
+{product-name} are only using the table name attribute and are the other attributes ignored.
+
+== @Column Annotation
+
+The `@Column` annotation is used to specify the details of the column to which a field or property will be mapped.
+You can use column annotation with the following most commonly used attributes
+
+* *name* attribute permits the name of the column to be explicitly specified.
+* *length* attribute permits the size of the column used to map a value, particularly for a String value.
+* *nullable* attribute enables the column to be marked NOT NULL when the schema is generated.
+* *unique* attribute allows the column to be marked as containing unique values.
+
+The JPA layer currently does not enforce the length and unique attributes and is left to the database to implement.
+The `@Column` annotation can be used with the `@Basic` annotation (discussed below).
+
+== @JoinColumn Annotation
+
+The `@JoinColumn` annotation is used to specify the details of a foreign link.
+The `@JoinColumn` annotation will always be used with one of the @XXXXToXXXX annotations.
+
+== Persistent Fields
+
+In addition, every persistent field can also be marked with one of the following annotations:
+* *@OneToOne, @ManyToOne* - for references of entity types.
+* *@OneToMany, @ManyToMany* - for collections and maps of entity types.
+* *@Basic* - for any other persistable kind.
+
+In {product-name}, @Basic(fetch=FetchType.LAZY) can be used to specify that a field should only be fetched the first time it is read.
+
+The optional value is ignored, and `@Column(nullable=true)` is used to determine if a field is optional.
+
+[NOTE]
+{product-name} does not have full support for @ManyToMany and will be added in the future.
+
+== Identifiers
+
+Identifiers represent the primary key of an entity.
+This implies that the values are unique and can identify a specific entity, that they aren't null and won't be modified.
+In addition to the `@Id` tag, you could also add the `@GeneratedValue` to signal to the entity manager that the field will be set later by a downstream process relaxing the not null rule.
+Fields that have the `@Id` tag but not `@GeneratedValue` cannot be set to null, and will the EntityManager generate an error if you try and persist it.
+
+[NOTE]
+The attributes of the `@GeneratedValue` are ignored, and will {product-name} assumed that the strategy will always be sequencing and that the database generates it.
+
+For a more comprehensive explanation, please see the xref:entities/Primary Keys.adoc[Primary Keys] section.
+
+== Version Field
+
+To enable optimistic locking (as explained in the xref:using/Locking.adoc[Locking] section), a field in the entity needs to be annotated with the `@Version` tag.
+
+[IMPORTANT]
+Only one version field per entity class is allowed!
+
+[IMPORTANT]
+The version field is "read-only" and users are not allowed to change version fields.
+If an attempt is made to change a version field a `PersistenceException` exception will be generated.
+
+{product-name} will, every time the entity is persisted, automatically increment the field for `numeric` type field and for `Timestamp` type, set it to the current timestamp.
+
+[source,java]
+----
+@Entity
+public class EntityWithVersionField {
+    @Version long version;
+}
+----
+
+Above is an example of an entity with a `@Version` field.
