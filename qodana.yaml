@@ -31,6 +31,8 @@ projectJDK: 21 #(Applied in CI/CD pipeline)
 linter: jetbrains/qodana-jvm:latest
 exclude:
   - name: AutoCloseableResource
+  - paths:
+      - docs
 
 licenseRules:
   - keys:
