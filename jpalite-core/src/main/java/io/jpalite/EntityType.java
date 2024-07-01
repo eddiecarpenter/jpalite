@@ -19,8 +19,7 @@ package io.jpalite;
 
 public enum EntityType
 {
-	ENTITY_NORMAL,
-	ENTITY_DATABASE,
-	ENTITY_IDCLASS,
-	ENTITY_EMBEDDABLE
+	ENTITY,
+	ID_CLASS,
+	EMBEDDABLE
 }

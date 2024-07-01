@@ -52,9 +52,10 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 	private EntityField versionField;
 
 
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public EntityMetaDataImpl(Class<T> entityClass)
 	{
-		entityType = EntityType.ENTITY_NORMAL;
+		entityType = EntityType.ENTITY;
 		entityFields = new LinkedHashMap<>();
 		idFields = new ArrayList<>();
 
@@ -72,13 +73,12 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 
 		Table tableAnnotation = entityClass.getAnnotation(Table.class);
 		if (tableAnnotation != null) {
-			entityType = EntityType.ENTITY_DATABASE;
 			this.table = tableAnnotation.name();
 		}//if
 
 		Embeddable embeddable = entityClass.getAnnotation(Embeddable.class);
 		if (embeddable != null) {
-			entityType = EntityType.ENTITY_EMBEDDABLE;
+			entityType = EntityType.EMBEDDABLE;
 		}//if
 
 		Cacheable cacheableAnnotation = entityClass.getAnnotation(Cacheable.class);
@@ -98,12 +98,12 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 		if (idClass != null) {
 			if (!EntityMetaDataManager.isRegistered(idClass.value())) {
 				//TODO: Added support for @EmbeddedId and fix implementation of @IdClass
-				primaryKey = new EntityMetaDataImpl(idClass.value());
-				((EntityMetaDataImpl<?>) primaryKey).entityType = EntityType.ENTITY_IDCLASS;
+				primaryKey = new EntityMetaDataImpl<>(idClass.value());
+				((EntityMetaDataImpl<?>) primaryKey).entityType = EntityType.ID_CLASS;
 				EntityMetaDataManager.register(primaryKey);
 			}//if
 
-			if (primaryKey.getEntityType() != EntityType.ENTITY_IDCLASS) {
+			if (primaryKey.getEntityType() != EntityType.ID_CLASS) {
 				throw new IllegalArgumentException("Illegal IdClass specified. [" + idClass.value() + "] is already registered as an entity of type [" + primaryKey.getEntityType() + "]");
 			}//if
 		}//if
@@ -217,7 +217,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 	/**
 	 * The time the entity is to remain in cache before expiring it. Only used if cacheable is true
 	 *
-	 * @return
+	 * @return The idle time setting
 	 */
 	public long getIdleTime()
 	{
@@ -358,11 +358,6 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 		return primaryKey;
 	}//getIPrimaryKeyMetaData
 
-	@Override
-	public boolean isLegacyEntity()
-	{
-		return legacyEntity;
-	}
 
 	@Override
 	@Nonnull
@@ -370,6 +365,13 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 	{
 		return idFields;
 	}//getIdFields
+
+	@Override
+	@Deprecated
+	public boolean isLegacyEntity()
+	{
+		return legacyEntity;
+	}
 
 	@Override
 	@Deprecated

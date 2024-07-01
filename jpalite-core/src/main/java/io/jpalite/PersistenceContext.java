@@ -40,15 +40,7 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * @return The persistence unit
 	 */
 	JPALitePersistenceUnit getPersistenceUnit();
-
-	/**
-	 * This method is used to check if the context have support for a given {@link EntityType}
-	 *
-	 * @param entityType the entity type
-	 * @return True if supported
-	 */
-	boolean supportedEntityType(EntityType entityType);
-
+	
 	/**
 	 * Open a new connection. If already open stack will be maintained to keep track of the number of times the
 	 * connection has been opened with closing it. The cursor name is null current thread name is used.

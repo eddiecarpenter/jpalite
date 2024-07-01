@@ -840,7 +840,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 			}//else
 		}//if
 
-		if (entityInfo != null && (entityInfo.getMetadata().getEntityType() == EntityType.ENTITY_EMBEDDABLE || entityInfo.getMetadata().getEntityType() == EntityType.ENTITY_IDCLASS)) {
+		if (entityInfo != null && (entityInfo.getMetadata().getEntityType() == EntityType.EMBEDDABLE || entityInfo.getMetadata().getEntityType() == EntityType.ID_CLASS)) {
 			addQueryParameter(parameter, entityInfo.getMetadata().getEntityClass());
 
 			List<Expression> colList = new ArrayList<>();

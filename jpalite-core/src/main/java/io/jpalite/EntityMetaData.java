@@ -81,13 +81,6 @@ public interface EntityMetaData<T>
 	boolean isEntityField(String fieldName);
 
 	/**
-	 * Retrieve the legacy state of the entity. An entity is seen as a legacy entity if there is no @Entity annotation.
-	 *
-	 * @return True if a legacy entity
-	 */
-	boolean isLegacyEntity();
-
-	/**
 	 * Retrieve an EntityField for a given column name
 	 *
 	 * @param column The column name
@@ -197,4 +190,14 @@ public interface EntityMetaData<T>
 	 */
 	@Deprecated(since = "3.0.0", forRemoval = true)
 	String getColumns();
+
+	/**
+	 * Retrieve the legacy state of the entity. An entity is seen as a legacy entity if there is no @Entity annotation.
+	 *
+	 * @return True if a legacy entity
+	 * @deprecated This method is deprecated and will be removed in a future version.
+	 */
+	@Deprecated(since = "3.0.0", forRemoval = true)
+	boolean isLegacyEntity();
+
 }//EntityMetaData

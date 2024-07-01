@@ -27,10 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-@SuppressWarnings("java:S100")//have methods starting "_" on purpose
-/**
- *
- */
+@SuppressWarnings("java:S100")//have methods starting "_" to prevent clashing with methods defined in the entities
 public interface JPAEntity extends Serializable
 {
 	/**
@@ -39,8 +36,15 @@ public interface JPAEntity extends Serializable
 	 * @return The Entity Metadata
 	 */
 	@SuppressWarnings("java:S1452")
-	//generic wildcard is required
+	//Generic wildcard is required
 	EntityMetaData<?> _getMetaData();
+
+	/**
+	 * Return the entity class associated with the entity
+	 *
+	 * @return The Class<?>
+	 */
+	Class<?> _getEntityClass();
 
 	/**
 	 * Return a set of all the modified fields
@@ -48,14 +52,7 @@ public interface JPAEntity extends Serializable
 	 * @return The set
 	 */
 	Set<String> _getModifiedFields();
-
-	/**
-	 * Check to verify if entity is a legacy entity
-	 *
-	 * @return True if legacy
-	 */
-	boolean _isLegacyEntity();
-
+	
 	/**
 	 * Clear both the update and snapshot modification flags.
 	 */
@@ -105,7 +102,7 @@ public interface JPAEntity extends Serializable
 	LockModeType _getLockMode();
 
 	/**
-	 * Set the entity's lock modew
+	 * Set the entity's lock mode
 	 *
 	 * @param lockMode The {@link LockModeType} value assigned to the entity
 	 */
@@ -167,7 +164,7 @@ public interface JPAEntity extends Serializable
 	 * Allow the caller to update a restricted field (VERSION and NON-UPDATABLE).
 	 * This purpose of this method is for internal use and only be used if you know what you are doing
 	 *
-	 * @param method
+	 * @param method to invoke
 	 */
 	void _updateRestrictedField(Consumer<JPAEntity> method);
 
@@ -187,32 +184,11 @@ public interface JPAEntity extends Serializable
 
 	/**
 	 * Set the entity's id fields equal to the primary key object. This can only be done on a new entity that has a
-	 * TRANSIENT state After setting the primary key the entity will be marked as lazyFetched.
+	 * TRANSIENT state.
 	 *
 	 * @param primaryKey The primary key object
 	 */
 	void _setPrimaryKey(Object primaryKey);
-
-	/**
-	 * Return the Entity info part of the toString reply
-	 *
-	 * @return The entity info
-	 */
-	String _getEntityInfo();
-
-	/**
-	 * Return the State info part of the toString reply
-	 *
-	 * @return The state info
-	 */
-	String _getStateInfo();
-
-	/**
-	 * Return the Data info part of the toString reply
-	 *
-	 * @return The Data info
-	 */
-	String _getDataInfo();
 
 	/**
 	 * Check if the entity was loaded only by reference.
@@ -222,7 +198,7 @@ public interface JPAEntity extends Serializable
 	boolean _isLazyLoaded();
 
 	/**
-	 * Determine the load state of a given persistent field of the entity.
+	 * Check if the field in entity is lazily loaded
 	 *
 	 * @param fieldName name of field whose load state is to be determined
 	 * @return false if the field state has not been loaded, else true
@@ -314,7 +290,6 @@ public interface JPAEntity extends Serializable
 	 */
 	void _fromJson(String jsonStr);
 
-
 	/**
 	 * Compare the primary keys of the to entities
 	 *
@@ -322,6 +297,4 @@ public interface JPAEntity extends Serializable
 	 * @return True if the primary keys are the same
 	 */
 	boolean _entityEquals(JPAEntity entity);
-
-	Class<?> get$$EntityClass();
 }//JPAEntity

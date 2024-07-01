@@ -27,8 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.jpalite.JPALiteEntityManager.PERSISTENCE_PRIMARYKEY_USED;
-
 @SuppressWarnings("java:S1452") //generic wildcard is required
 public class SQLParser implements QueryParser
 {
@@ -57,7 +55,7 @@ public class SQLParser implements QueryParser
 	/**
 	 * Indicator that only primary keys are used
 	 */
-	private boolean selectUsingPrimaryKey = false;
+	private final boolean selectUsingPrimaryKey;
 
 	/**
 	 * Constructor for the class. The method takes as input a JQPL Statement and converts it to a Native Statement. Note
@@ -71,10 +69,7 @@ public class SQLParser implements QueryParser
 		this.queryHints = new HashMap<>(queryHints);
 		usingNamedParameters = false;
 		queryParameters = new ArrayList<>();
-
-		if (queryHints.containsKey(PERSISTENCE_PRIMARYKEY_USED)) {
-			selectUsingPrimaryKey = Boolean.parseBoolean(queryHints.get(PERSISTENCE_PRIMARYKEY_USED).toString());
-		}//if
+		selectUsingPrimaryKey = false;
 
 		query = processSQLParameterLabels(rawQuery);
 		String statement = query.substring(0, query.indexOf(' ')).toUpperCase();

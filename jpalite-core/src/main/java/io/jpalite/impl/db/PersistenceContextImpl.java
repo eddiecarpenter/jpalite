@@ -48,8 +48,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static io.jpalite.JPALiteEntityManager.PERSISTENCE_QUERY_LOG_SLOWTIME;
-import static io.jpalite.JPALiteEntityManager.PERSISTENCE_SHOW_SQL;
+import static io.jpalite.JPALiteEntityManager.*;
 import static io.jpalite.PersistenceAction.*;
 
 /**
@@ -116,13 +115,17 @@ public class PersistenceContextImpl implements PersistenceContext
 	/**
 	 * The execution time after which queries are considered run too slowly
 	 */
-	long slowQueryTime;
+	private long slowQueryTime;
 	/**
 	 * If true create a connection that shows the SQL
 	 */
-	boolean showSql;
+	private boolean showSql;
 	/**
-	 * Control variable to indicated that we have forced rollback
+	 * The cache store mode in effect
+	 */
+	private CacheStoreMode cacheStoreMode;
+	/**
+	 * Control variable to indicate that we have forced rollback
 	 */
 	private boolean rollbackOnly = false;
 	/**
@@ -184,6 +187,7 @@ public class PersistenceContextImpl implements PersistenceContext
 		connectionNames = new ArrayDeque<>();
 		savepoints = new ArrayDeque<>();
 		connectionName = Thread.currentThread().getName();
+		cacheStoreMode = CacheStoreMode.USE;
 		slowQueryTime = 500L;
 		joinedToTransaction = false;
 		autoJoinTransaction = false;
@@ -197,9 +201,7 @@ public class PersistenceContextImpl implements PersistenceContext
 
 		entityL1Cache = new EntityL1LocalCacheImpl(this);
 
-		//entityL2Cache = new EntityL2CacheImpl(this.persistenceUnit);
 		entityL2Cache = new EntityCacheImpl(this.persistenceUnit);
-
 
 		LOG.debug("Created {}", this);
 	}//PersistenceContextImpl
@@ -214,6 +216,14 @@ public class PersistenceContextImpl implements PersistenceContext
 	public void setProperty(String name, Object value)
 	{
 		switch (name) {
+			case PERSISTENCE_CACHE_STOREMODE -> {
+				if (value instanceof String strValue) {
+					value = CacheStoreMode.valueOf(strValue);
+				}//if
+				if (value instanceof CacheStoreMode cacheMode) {
+					cacheStoreMode = cacheMode;
+				}//if
+			}
 			case PERSISTENCE_JTA_MANAGED -> {
 				if (value instanceof String strValue) {
 					value = Boolean.parseBoolean(strValue);
@@ -254,13 +264,6 @@ public class PersistenceContextImpl implements PersistenceContext
 	{
 		return properties;
 	}
-
-	@Override
-	public boolean supportedEntityType(EntityType entityType)
-	{
-		//We only support database entities
-		return EntityType.ENTITY_DATABASE.equals(entityType);
-	}//supportEntityType
 
 	@Override
 	public EntityLocalCache l1Cache()
@@ -773,7 +776,7 @@ public class PersistenceContextImpl implements PersistenceContext
 							if (action == PersistenceAction.DELETE) {
 								entity._setEntityState(EntityState.REMOVED);
 								if (entity._getMetaData().isCacheable()) {
-									l2Cache().evict(entity.get$$EntityClass(), entity._getPrimaryKey());
+									l2Cache().evict(entity._getEntityClass(), entity._getPrimaryKey());
 								}//if
 
 								cascadeRemove(Set.of(MappingType.MANY_TO_ONE), entity);
@@ -786,8 +789,12 @@ public class PersistenceContextImpl implements PersistenceContext
 											entity._mapResultSet(null, vResultSet);
 										}//if
 									}//try
+
+									if (cacheStoreMode == CacheStoreMode.USE) {
+										l2Cache().add(entity);
+									}//else if
 								}//if
-								else if (entity._getMetaData().isCacheable()) {
+								else if (entity._getMetaData().isCacheable() && cacheStoreMode != CacheStoreMode.BYPASS) {
 									l2Cache().replace(entity);
 								}//else if
 

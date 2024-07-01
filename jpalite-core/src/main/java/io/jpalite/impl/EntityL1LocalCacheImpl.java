@@ -62,7 +62,7 @@ public class EntityL1LocalCacheImpl implements EntityLocalCache
 	{
 		if (persistenceContext.isActive() && primaryKey != null) {
 			JPAEntity entity = cache.stream()
-					.filter(e -> e.get$$EntityClass().equals(entityType))
+					.filter(e -> e._getEntityClass().equals(entityType))
 					.filter(e -> primaryKey.equals(e._getPrimaryKey()))
 					.findFirst()
 					.orElse(null);
@@ -87,7 +87,7 @@ public class EntityL1LocalCacheImpl implements EntityLocalCache
 	{
 		if (persistenceContext.isActive()) {
 			cache.stream()
-					.filter(e -> e.get$$EntityClass().equals(entityType))
+					.filter(e -> e._getEntityClass().equals(entityType))
 					.forEach(e -> action.accept((T) e));
 		}//if
 	}//foreachType
@@ -98,7 +98,7 @@ public class EntityL1LocalCacheImpl implements EntityLocalCache
 		entity._setPersistenceContext(persistenceContext);
 
 		//We only manage entities if we are in a transaction and if the entity type is supported by the persistence context
-		if (persistenceContext.isActive() && persistenceContext.supportedEntityType(entity._getMetaData().getEntityType())) {
+		if (persistenceContext.isActive()) {
 			cache.add(entity);
 			entity._setEntityState(EntityState.MANAGED);
 			LOG.trace("Adding Entity to L1 cache. Context [{}], Entity [{}]", persistenceContext, entity);

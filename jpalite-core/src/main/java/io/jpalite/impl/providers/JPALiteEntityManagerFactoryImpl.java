@@ -107,9 +107,6 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 	private PersistenceContext getPersistenceContext(SynchronizationType synchronizationType, Map<String, Object> properties) throws SQLException
 	{
 		JPALitePersistenceUnit persistenceUnit = getPersistenceUnit();
-		if (persistenceUnit == null) {
-			throw new PersistenceException("Unknown persistence unit " + persistenceUnitName);
-		}//if
 
 		DatabasePool databasePool = DatabasePoolFactory.getDatabasePool(persistenceUnit.getDataSourceName());
 
@@ -136,12 +133,14 @@ public class JPALiteEntityManagerFactoryImpl implements EntityManagerFactory
 	@Override
 	public CriteriaBuilder getCriteriaBuilder()
 	{
+		//Criteria Queries are not supported
 		throw new UnsupportedOperationException(NOT_SUPPORTED);
 	}
 
 	@Override
 	public Metamodel getMetamodel()
 	{
+		//Criteria Queries are not supported
 		throw new UnsupportedOperationException(NOT_SUPPORTED);
 	}
 

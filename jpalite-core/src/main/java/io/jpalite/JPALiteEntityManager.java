@@ -56,10 +56,20 @@ public interface JPALiteEntityManager extends EntityManager, Closeable
 	 * cache to retrieve an entity or if it shall BYPASS it and get it directly from the database.
 	 */
 	String PERSISTENCE_CACHE_RETRIEVEMODE = "jakarta.persistence.cache.retrieveMode";
+
+	/**
+	 * Valid values are USE, BYPASS or REFRESH. If the setting is not recognised, it defaults to USE.
+	 * <p>
+	 * The storeMode hint controls the storage and update of the second-level cache.
+	 */
+	String PERSISTENCE_CACHE_STOREMODE = "jakarta.persistence.cache.storeMode";
+
 	/**
 	 * If set to true entities retrieved in {@link Query#getResultList()} is also cached
 	 */
 	String PERSISTENCE_CACHE_RESULTLIST = "jpalite.cache.resultList";
+
+
 	/**
 	 * Hint the JQPL parser to ignore fetchtype setting on basic fields effectively setting all basic fields to be
 	 * EAGERly fetched.
@@ -77,13 +87,6 @@ public interface JPALiteEntityManager extends EntityManager, Closeable
 	 * Entity Manager or any Query to log the actual query that is executed.
 	 */
 	String PERSISTENCE_SHOW_SQL = "jpalite.showSql";
-	/**
-	 * Valid values are EAGER or LAZY. If the setting is not recognised it is ignored.
-	 * <p>
-	 * A hint that can be passed to a Native Query that query is done using only the primary key. This will allow the query
-	 * executor to use L2 caching.
-	 */
-	String PERSISTENCE_PRIMARYKEY_USED = "jpalite.primarykey.used";
 
 	/**
 	 * Synchronize the entity to the underlying database.

@@ -127,7 +127,7 @@ public class JPAEntityImpl implements JPAEntity
 	}//JPAEntityImpl
 
 	@Override
-	public Class<?> get$$EntityClass()
+	public Class<?> _getEntityClass()
 	{
 		return getClass();
 	}
@@ -164,15 +164,13 @@ public class JPAEntityImpl implements JPAEntity
 		return Objects.hashCode(_getPrimaryKey());
 	}
 
-	@Override
-	public String _getEntityInfo()
+	private String _getEntityInfo()
 	{
 		return "Entity " + $$metadata.getName();
 	}//_getEntityInfo
 
-	@Override
 	@SuppressWarnings({"java:S3776", "java:S3740"}) //The method cannot be simplified without increasing its complexity
-	public String _getDataInfo()
+	private String _getDataInfo()
 	{
 		StringBuilder toString = new StringBuilder();
 
@@ -227,8 +225,7 @@ public class JPAEntityImpl implements JPAEntity
 		return toString.toString();
 	}//_getDataInfo
 
-	@Override
-	public String _getStateInfo()
+	private String _getStateInfo()
 	{
 		return " State:" + $$state + ", " + "Action:" + $$pendingAction;
 	}//_getStateInfo
@@ -319,6 +316,26 @@ public class JPAEntityImpl implements JPAEntity
 			JPAEntity replaceEntity = (JPAEntity) query.getSingleResult();
 			_replaceWith(replaceEntity);
 			$$lazyLoaded = false;
+
+			for (EntityField field : _getMetaData().getEntityFields()) {
+				if ((field.getCascade().contains(CascadeType.ALL) || field.getCascade().contains(CascadeType.REFRESH))) {
+					if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE) {
+						JPAEntity entity = (JPAEntity) field.invokeGetter(this);
+						if (entity != null) {
+							entity._refreshEntity(properties);
+						}
+					}
+					else {
+						if (field.getMappingType() == MappingType.ONE_TO_MANY || field.getMappingType() == MappingType.MANY_TO_MANY) {
+							@SuppressWarnings("unchecked")
+							List<JPAEntity> entities = (List<JPAEntity>) field.invokeGetter(this);
+							for (JPAEntity entity : entities) {
+								entity._refreshEntity(properties);
+							}
+						}
+					}
+				}
+			}
 		}//try
 		catch (NoResultException ex) {
 			throw new EntityNotFoundException(String.format("Lazy load of entity '%s' for key '%s' failed", $$metadata.getName(), _getPrimaryKey()));
@@ -456,12 +473,6 @@ public class JPAEntityImpl implements JPAEntity
 	}
 
 	@Override
-	public boolean _isLegacyEntity()
-	{
-		return $$metadata.isLegacyEntity();
-	}
-
-	@Override
 	public LoadState _loadState()
 	{
 		return (_isLazyLoaded() || $$blankEntity) ? LoadState.NOT_LOADED : LoadState.LOADED;
@@ -489,7 +500,7 @@ public class JPAEntityImpl implements JPAEntity
 			EntityField vEntityField = $$metadata.getEntityField(fieldName);
 
 			if (!$$mapping && !_getEntityState().equals(EntityState.TRANSIENT) && vEntityField.isIdField()) {
-				if (!_isLegacyEntity()) {
+				if (!$$metadata.isLegacyEntity()) {
 					throw new PersistenceException("The ID field cannot be modified");
 				}//if
 				LoggerFactory.getLogger(JPAEntityImpl.class).warn("Legacy Mode :: Allowing modifying of ID Field {} in Entity {}", vEntityField.getName(), $$metadata.getName());
@@ -500,7 +511,7 @@ public class JPAEntityImpl implements JPAEntity
 			}//if
 
 			if (!$$mapping && !_getEntityState().equals(EntityState.TRANSIENT) && !vEntityField.isUpdatable()) {
-				if (!_isLegacyEntity()) {
+				if (!$$metadata.isLegacyEntity()) {
 					throw new PersistenceException("Attempting to updated a field that is marked as NOT updatable");
 				}//if
 				LoggerFactory.getLogger(JPAEntityImpl.class).warn("Legacy Mode :: Allowing modifying of NOT updatable field {} in Entity {}", vEntityField.getName(), $$metadata.getName());
@@ -842,7 +853,7 @@ public class JPAEntityImpl implements JPAEntity
 				out.writeShort(field.getFieldNr());
 				if (field.isEntityField()) {
 					EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
-					if (metaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
+					if (metaData.getEntityType() == EntityType.EMBEDDABLE) {
 						((JPAEntityImpl) value).writeFields(out);
 					}//if
 					else {
@@ -879,7 +890,7 @@ public class JPAEntityImpl implements JPAEntity
 
 				JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
 				entity.readFields(in);
-				if (metaData.getEntityType() == EntityType.ENTITY_DATABASE) {
+				if (metaData.getEntityType() == EntityType.ENTITY) {
 					entity._markLazyLoaded();
 				}
 				field.invokeSetter(this, entity);
@@ -913,7 +924,7 @@ public class JPAEntityImpl implements JPAEntity
 						else {
 
 							EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
-							if (metaData.getEntityType() == EntityType.ENTITY_EMBEDDABLE) {
+							if (metaData.getEntityType() == EntityType.EMBEDDABLE) {
 								((JPAEntityImpl) value).generateJson(jsonGenerator);
 							}//if
 							else {
@@ -985,7 +996,7 @@ public class JPAEntityImpl implements JPAEntity
 					JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
 					entity._fromJson(node.getValue());
 
-					if (metaData.getEntityType() == EntityType.ENTITY_DATABASE) {
+					if (metaData.getEntityType() == EntityType.ENTITY) {
 						entity._markLazyLoaded();
 					}
 					field.invokeSetter(this, entity);

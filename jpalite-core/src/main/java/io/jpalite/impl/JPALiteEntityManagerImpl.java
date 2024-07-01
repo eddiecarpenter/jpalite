@@ -130,11 +130,6 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 		if (!(JPAEntity.class.isAssignableFrom(entityClass))) {
 			throw new IllegalArgumentException("Entity " + entityClass.getName() + " is not created using EntityManager");
 		}//if
-
-		EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(entityClass);
-		if (!persistenceContext.supportedEntityType(metaData.getEntityType())) {
-			throw new IllegalArgumentException("Entity is of type " + metaData.getEntityType() + " is not supported");
-		}//if
 	}//checkEntityClass
 
 	private void checkEntityAttached(JPAEntity entity)
@@ -332,13 +327,22 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 				.forEach(f ->
 						 {
 							 try {
-								 if (f.getMappingType() == MappingType.ONE_TO_MANY) {
+								 if (f.getMappingType() == MappingType.ONE_TO_MANY || f.getMappingType() == MappingType.MANY_TO_MANY) {
+									 @SuppressWarnings("unchecked")
 									 List<JPAEntity> entityList = (List<JPAEntity>) f.invokeGetter(entity);
 
-									 for (ListIterator<JPAEntity> it = entityList.listIterator(); it.hasNext(); ) {
-										 it.set(merge(it.next()));
+									 List<JPAEntity> newEntityList = new ArrayList<>();
+									 for (JPAEntity ref : entityList) {
+										 newEntityList.add(merge(ref));
 									 }//for
+									 f.invokeSetter(entity, newEntityList);
 								 }//if
+								 else {
+									 if (f.getMappingType() == MappingType.MANY_TO_ONE || f.getMappingType() == MappingType.ONE_TO_ONE) {
+										 JPAEntity ref = (JPAEntity) f.invokeGetter(entity);
+										 f.invokeSetter(entity, merge(ref));
+									 }
+								 }
 							 }//try
 							 catch (PersistenceException ex) {
 								 throw ex;
@@ -351,6 +355,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <X> X merge(X entity)
 	{
 		Span span = TRACER.spanBuilder("EntityManager::merge").setSpanKind(SpanKind.SERVER).startSpan();
@@ -400,6 +405,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 	}//merge
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <T> T clone(@Nonnull T entity)
 	{
 		checkOpen();
@@ -519,6 +525,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 	}//find
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public <T> T getReference(Class<T> entityClass, Object primaryKey)
 	{
 		checkEntityClass(entityClass);
@@ -656,6 +663,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 	}//createNamedQuery
 
 	@Override
+	@SuppressWarnings({"unchecked", "rawtypes"})
 	public Query createNativeQuery(String sqlString, Class resultClass)
 	{
 		checkOpen();
@@ -779,6 +787,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 	}
 
 	@Override
+	@SuppressWarnings({"unchecked"})
 	public <T> T unwrap(Class<T> cls)
 	{
 		checkOpen();

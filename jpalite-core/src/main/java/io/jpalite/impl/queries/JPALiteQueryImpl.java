@@ -103,7 +103,8 @@ public class JPALiteQueryImpl<T> implements Query
 	private String connectionName;
 	private int queryTimeout;
 	private int lockTimeout;
-	private boolean bypassL2Cache;
+	private CacheRetrieveMode cacheRetrieveMode;
+	private CacheStoreMode cacheStoreMode;
 	private boolean cacheResultList;
 	private boolean showSql;
 	private Class<?>[] queryResultTypes;
@@ -163,7 +164,8 @@ public class JPALiteQueryImpl<T> implements Query
 			this.persistenceContext = persistenceContext;
 			this.resultClass = resultClass;
 			connectionName = persistenceContext.getConnectionName();
-			bypassL2Cache = false;
+			cacheRetrieveMode = CacheRetrieveMode.USE;
+			cacheStoreMode = CacheStoreMode.USE;
 			queryTimeout = 0;
 			lockTimeout = 0;
 			params = new ArrayList<>();
@@ -296,7 +298,7 @@ public class JPALiteQueryImpl<T> implements Query
 				}//else
 
 				//Check if the entity is not already in L1 Cache
-				JPAEntity l1Entity = (JPAEntity) persistenceContext.l1Cache().find(entity.get$$EntityClass(), entity._getPrimaryKey());
+				JPAEntity l1Entity = (JPAEntity) persistenceContext.l1Cache().find(entity._getEntityClass(), entity._getPrimaryKey());
 				if (l1Entity == null) {
 					persistenceContext.l1Cache().manage(entity);
 				}//if
@@ -464,8 +466,17 @@ public class JPALiteQueryImpl<T> implements Query
 						((JPAEntity) entity)._setLockMode(lockMode);
 					}//if
 
-					if (cacheResultList && entity instanceof JPAEntity jpaEntity && jpaEntity._getMetaData().isCacheable()) {
-						persistenceContext.l2Cache().add(jpaEntity);
+					if (cacheResultList &&
+							entity instanceof JPAEntity jpaEntity &&
+							jpaEntity._getMetaData().isCacheable() &&
+							cacheStoreMode != CacheStoreMode.BYPASS
+					) {
+						if (cacheStoreMode == CacheStoreMode.USE) {
+							persistenceContext.l2Cache().add(jpaEntity);
+						}
+						else {
+							persistenceContext.l2Cache().replace(jpaEntity);
+						}
 					}//if
 					resultList.add(entity);
 				}//while
@@ -510,7 +521,7 @@ public class JPALiteQueryImpl<T> implements Query
 	{
 		T result = null;
 
-		if (selectUsingPrimaryKey && !bypassL2Cache) {
+		if (selectUsingPrimaryKey && cacheRetrieveMode == CacheRetrieveMode.USE) {
 			EntityMetaData<T> metaData = EntityMetaDataManager.getMetaData(resultClass);
 			if (metaData.isCacheable()) {
 				if (LOG.isDebugEnabled()) {
@@ -566,8 +577,13 @@ public class JPALiteQueryImpl<T> implements Query
 					}//if
 
 					if (result instanceof JPAEntity jpaEntity) {
-						if (jpaEntity._getMetaData().isCacheable() && !bypassL2Cache) {
-							persistenceContext.l2Cache().add(jpaEntity);
+						if (jpaEntity._getMetaData().isCacheable() && cacheStoreMode != CacheStoreMode.BYPASS) {
+							if (cacheStoreMode == CacheStoreMode.USE) {
+								persistenceContext.l2Cache().add(jpaEntity);
+							}
+							else {
+								persistenceContext.l2Cache().replace(jpaEntity);
+							}
 						}//if
 
 						if (isPessimisticLocking(lockMode)) {
@@ -684,11 +700,19 @@ public class JPALiteQueryImpl<T> implements Query
 				}
 			}
 			case PERSISTENCE_CACHE_RETRIEVEMODE -> {
-				if (value instanceof CacheRetrieveMode mode) {
-					bypassL2Cache = CacheRetrieveMode.BYPASS.equals(mode);
+				if (value instanceof String aString) {
+					cacheRetrieveMode = CacheRetrieveMode.valueOf(aString);
 				}
-				else {
-					bypassL2Cache = CacheRetrieveMode.BYPASS.equals(CacheRetrieveMode.valueOf(value.toString()));
+				if (value instanceof CacheRetrieveMode mode) {
+					cacheRetrieveMode = mode;
+				}
+			}
+			case PERSISTENCE_CACHE_STOREMODE -> {
+				if (value instanceof String aString) {
+					cacheStoreMode = CacheStoreMode.valueOf(aString);
+				}
+				if (value instanceof CacheStoreMode mode) {
+					cacheStoreMode = mode;
 				}
 			}
 			case PERSISTENCE_SHOW_SQL -> {
@@ -708,7 +732,7 @@ public class JPALiteQueryImpl<T> implements Query
 					cacheResultList = false;
 				}//else
 			}
-			case PERSISTENCE_PRIMARYKEY_USED -> selectUsingPrimaryKey = true;
+
 			case PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE, PERSISTENCE_OVERRIDE_FETCHTYPE -> {
 				if (value instanceof FetchType fetchType) {
 					hints.put(hintName, fetchType);
