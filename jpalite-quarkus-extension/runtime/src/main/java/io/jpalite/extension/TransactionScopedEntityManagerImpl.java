@@ -152,7 +152,7 @@ public class TransactionScopedEntityManagerImpl implements JPALiteEntityManager
 	}
 
 	@Override
-	public <T> void flushEntity(T entity)
+	public <T> void flushEntity(@Nonnull T entity)
 	{
 		try (EntityManagerSession session = getEntityManager()) {
 			if (session.getEntityManager() instanceof JPALiteEntityManager vTSEntityManager) {
@@ -199,7 +199,7 @@ public class TransactionScopedEntityManagerImpl implements JPALiteEntityManager
 	}
 
 	@Override
-	public <T> T clone(T entity)
+	public <T> T clone(@Nonnull T entity)
 	{
 		try (EntityManagerSession session = getEntityManager()) {
 			if (session.getEntityManager() instanceof JPALiteEntityManager jpaEntityManager) {
