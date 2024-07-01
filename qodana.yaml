@@ -33,7 +33,10 @@ exclude:
   - name: AutoCloseableResource
   - paths:
       - docs
-
+  - name: All
+    paths:
+      - jpalite-quarkus-extension/runtime/src/main/java/io/jpalite/extension/JPALiteRecorder.java # false CDI issue
+      
 licenseRules:
   - keys:
       - "PROPRIETARY-LICENSE"
