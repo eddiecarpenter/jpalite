@@ -345,6 +345,7 @@ public class JPALiteEntityManagerImpl implements JPALiteEntityManager
 								 }
 							 }//try
 							 catch (PersistenceException ex) {
+								 LOG.error("Error processing cascading fields");
 								 throw ex;
 							 }//catch
 							 catch (RuntimeException ex) {

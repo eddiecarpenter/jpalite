@@ -783,17 +783,15 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 
 			queryParameters.add(new QueryParameterImpl<>(parameter.getIndex(), parameterType));
 		}//if
-		else {
+		else if (expression instanceof JdbcNamedParameter parameter) {
 			if (queryParameters.isEmpty()) {
 				usingNamedParameters = true;
 			}//if
 			else if (!usingNamedParameters) {
 				throw new IllegalArgumentException("Mixing positional and named parameters are not allowed");
 			}//else if
-
-			JdbcNamedParameter newParameter = (JdbcNamedParameter) expression;
-
-			queryParameters.add(new QueryParameterImpl<>(newParameter.getName(), queryParameters.size() + 1, parameterType));
+			
+			queryParameters.add(new QueryParameterImpl<>(parameter.getName(), queryParameters.size() + 1, parameterType));
 		}//else
 	}//addQueryParameter
 
