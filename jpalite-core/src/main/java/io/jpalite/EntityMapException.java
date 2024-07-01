@@ -19,13 +19,8 @@ package io.jpalite;
 
 import jakarta.persistence.PersistenceException;
 
-import java.io.Serial;
-
 public class EntityMapException extends PersistenceException
 {
-	@Serial
-	private static final long serialVersionUID = -7640891001823058796L;
-
 	public EntityMapException(String message)
 	{
 		super(message);

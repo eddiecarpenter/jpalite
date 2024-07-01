@@ -382,7 +382,7 @@ public class PersistenceContextImpl implements PersistenceContext
 		this.connectionName = connectionName;
 	}
 
-	@SuppressWarnings({"java:S1141", "java:S2077"})
+	@SuppressWarnings({"java:S1141", "java:S2077", "tainting"})
 	//Having try-resource in a bigger try block is allowed. Dynamically formatted SQL is verified to be safe
 	@Override
 	@Nonnull
@@ -413,7 +413,8 @@ public class PersistenceContextImpl implements PersistenceContext
 					if (applicationName.length() > 61) {
 						applicationName = applicationName.substring(0, 61);
 					}//if
-					writeStmt.execute("set application_name to '" + applicationName + "'");
+					String applicationNameQry = "set application_name to '" + applicationName + "'";
+					writeStmt.execute(applicationNameQry);
 				}//try
 				catch (SQLException ex) {
 					LOG.error("Error setting the JDBC application name", ex);

@@ -19,13 +19,8 @@ package io.jpalite;
 
 import jakarta.persistence.PersistenceException;
 
-import java.io.Serial;
-
 public class UnknownFieldException extends PersistenceException
 {
-	@Serial
-	private static final long serialVersionUID = -7640891001823058796L;
-
 	public UnknownFieldException(String message)
 	{
 		super(message);
