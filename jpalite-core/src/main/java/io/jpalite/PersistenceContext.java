@@ -27,7 +27,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.Map;
 
-public interface PersistenceContext extends EntityTransaction, AutoCloseable
+public interface PersistenceContext extends EntityTransaction
 {
 	/**
 	 * The jpalite.persistence.jta hint is used to signal the transaction management under JTA control.
@@ -40,7 +40,7 @@ public interface PersistenceContext extends EntityTransaction, AutoCloseable
 	 * @return The persistence unit
 	 */
 	JPALitePersistenceUnit getPersistenceUnit();
-	
+
 	/**
 	 * Open a new connection. If already open stack will be maintained to keep track of the number of times the
 	 * connection has been opened with closing it. The cursor name is null current thread name is used.
