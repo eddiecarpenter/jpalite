@@ -1,0 +1,13 @@
+org.jpalite.impl.fieldtypes.BooleanFieldType
+org.jpalite.impl.fieldtypes.IntegerFieldType
+org.jpalite.impl.fieldtypes.LongLongFieldType
+org.jpalite.impl.fieldtypes.DoubleDoubleFieldType
+org.jpalite.impl.fieldtypes.BoolFieldType
+org.jpalite.impl.fieldtypes.IntFieldType
+org.jpalite.impl.fieldtypes.LongFieldType
+org.jpalite.impl.fieldtypes.DoubleFieldType
+org.jpalite.impl.fieldtypes.StringFieldType
+org.jpalite.impl.fieldtypes.BytesFieldType
+org.jpalite.impl.fieldtypes.TimestampFieldType
+org.jpalite.impl.fieldtypes.LocalDateTimeFieldType
+org.jpalite.impl.fieldtypes.BigDecimalFieldType
