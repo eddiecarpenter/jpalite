@@ -1,9 +1,8 @@
-:project-version: ${release.current-version}
+:project-version: 3.0.0
 :authors: Eddie Carpenter <eddie.carpenter@icloud.com>
 :copyright: Apache2
 :product-name:  JPALite
 :description: {product-name} documentation
 :favicon: ../../assets/images/jpalitefav.png
 :examples-dir: ./../examples/
-:project-version: 3.0.0
 :email: eddie.carpenter@icloud.com

@@ -38,6 +38,7 @@
         <module>jpalite-repository</module>
         <module>jpalite-maven-plugin</module>
         <module>jpalite-quarkus-extension</module>
+        <module>docs</module>
     </modules>
 
     <dependencyManagement>
