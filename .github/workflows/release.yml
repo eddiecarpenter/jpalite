@@ -1,11 +1,11 @@
 name: JPALite Release
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [ closed ]
     paths:
       - '.github/project.yml'
-      - '.github/workflows/release.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
