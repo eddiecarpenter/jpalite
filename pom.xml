@@ -13,6 +13,37 @@
     <name>JPALite Parent</name>
     <description>Parent POM definition for JPALite</description>
 
+    <scm>
+        <connection>scm:git:git@github.com:eddiecarpenter/jpalite.git</connection>
+        <developerConnection>scm:git:git@github.com:eddiecarpenter/jpalite.git</developerConnection>
+        <url>https://github.com/eddiecarpenter/jpalite</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/eddiecarpenter/jpalite/issues/</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>eddiecarpenter</id>
+            <name>Eddie Carpenter</name>
+            <email>eddie.carpenter@icloud.com</email>
+            <roles>
+                <role>Project Lead</role>
+            </roles>
+            <timezone>NZST (GMT+12)</timezone>
+        </developer>
+    </developers>
+
     <properties>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.source>21</maven.compiler.source>
