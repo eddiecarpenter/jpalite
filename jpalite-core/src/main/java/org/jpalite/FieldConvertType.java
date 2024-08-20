@@ -27,22 +27,70 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Interface for defining entities field types
+ * <p>
+ * Note that the X and Y types may be the same Java type.
+ *
+ * @param <X> the type of the entity attribute
+ * @param <Y> the type of the database column
+ */
 public interface FieldConvertType<X, Y> extends AttributeConverter<X, Y>
 {
-	Class<?> getAttributeType();
+    /**
+     * Returns the type of the entity attribute.
+     *
+     * @return the type of the entity attribute
+     */
+    Class<?> getAttributeType();
 
-	void toJson(JsonGenerator jsonGenerator, X value) throws IOException;
+    /**
+     * Converts an object of type X to JSON representation using the provided {@link JsonGenerator}.
+     *
+     * @param jsonGenerator the JSON generator used for writing JSON data
+     * @param value         the object to be converted to JSON
+     * @throws IOException if an I/O error occurs during the conversion
+     */
+    void toJson(JsonGenerator jsonGenerator, X value) throws IOException;
 
-	X fromJson(JsonNode json);
+    /**
+     * Converts a {@link JsonNode} to an instance of type X using the specified attribute converter.
+     *
+     * @param json the JSON node to be converted
+     * @return an instance of type X converted from the JSON node
+     */
+    X fromJson(JsonNode json);
 
-	void writeField(Object value, DataOutputStream out) throws IOException;
+    /**
+     * Writes a field value to a DataOutputStream.
+     *
+     * @param value the value of the field to write
+     * @param out   the DataOutputStream to write to
+     * @throws IOException if an I/O error occurs while writing the field
+     */
+    void writeField(Object value, DataOutputStream out) throws IOException;
 
-	X readField(DataInputStream in) throws IOException;
+    /**
+     * Reads a field value from a DataInputStream.
+     *
+     * @param in the DataInputStream to read from
+     * @return the value of the field read from the DataInputStream
+     * @throws IOException if an I/O error occurs while reading the field
+     */
+    X readField(DataInputStream in) throws IOException;
 
 
-	@SuppressWarnings("unchecked")
-	default X convertToEntityAttribute(ResultSet resultSet, int column) throws SQLException
-	{
-		return (resultSet.wasNull() ? null : convertToEntityAttribute((Y) resultSet.getObject(column)));
-	}
+    /**
+     * Converts a value from a database column to an entity attribute of type X using an attribute converter.
+     *
+     * @param resultSet the ResultSet object representing the database result set
+     * @param column    the column index of the attribute in the ResultSet object
+     * @return the converted entity attribute value of type X, or null if the column value is null
+     * @throws SQLException if an error occurs while accessing the ResultSet object
+     */
+    @SuppressWarnings("unchecked")
+    default X convertToEntityAttribute(ResultSet resultSet, int column) throws SQLException
+    {
+        return (resultSet.wasNull() ? null : convertToEntityAttribute((Y) resultSet.getObject(column)));
+    }
 }
