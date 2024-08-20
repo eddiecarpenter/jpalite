@@ -1,6 +1,6 @@
 [
   {
-    "name": "io.jpalite.agroal.AgroalDataSourceProvider",
+    "name": "org.jpalite.agroal.AgroalDataSourceProvider",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -10,7 +10,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.extension.PropertyPersistenceUnitProvider",
+    "name": "org.jpalite.extension.PropertyPersistenceUnitProvider",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,

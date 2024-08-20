@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 public class JPALiteInfinispanCache implements JPACache
 {
-    private static final String REGION_TIMESTAMP_NAME = "io.jpalite.region.$timestamps$";
+    private static final String REGION_TIMESTAMP_NAME = "org.jpalite.region.$timestamps$";
 
     private final String cacheClientName;
     private final String configuration;

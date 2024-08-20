@@ -35,7 +35,7 @@ public interface FieldConvertType<X, Y> extends AttributeConverter<X, Y>
 ----
 
 [IMPORTANT]
-All auto applied converters must be listed as an SPI service under *META-INF/service/io.jpalite.FieldConvertType*
+All auto applied converters must be listed as an SPI service under *META-INF/service/org.jpalite.FieldConvertType*
 
 == Example
 

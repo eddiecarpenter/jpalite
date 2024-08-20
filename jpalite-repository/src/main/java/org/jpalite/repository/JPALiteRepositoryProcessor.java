@@ -36,7 +36,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-@SupportedAnnotationTypes("io.jpalite.repository.Repository")
+@SupportedAnnotationTypes("org.jpalite.repository.Repository")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @AutoService(Processor.class)
 @SuppressWarnings("java:S1192") //We are generating code here. Defining statics will impair the readability
@@ -405,6 +405,7 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
             out.println("import java.util.*;");
             out.println("import org.jpalite.PersistenceUnit;");
             out.println("import org.jpalite.repository.*;");
+            out.println("import org.jpalite.extension.JPALiteRecorder;");
             out.println();
 
             SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
@@ -434,7 +435,7 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 
             out.println("public EntityManager getEntityManager() {");
             if (annotation.persistenceUnit().startsWith("${")) {
-                out.println("   io.jpalite.extension.JPALiteRecorder producer = Arc.container().instance(io.jpalite.extension.JPALiteRecorder.class).get();");
+                out.println("  JPALiteRecorder producer = Arc.container().instance(JPALiteRecorder.class).get();");
                 out.print("   return producer.getEntityManager(JpaRepositoryUtil.getPersistenceUnitName(\"");
                 out.print(annotation.persistenceUnit());
                 out.println("\"));");
@@ -448,8 +449,8 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
                        .forEach(t ->
                                 {
                                     switch (((DeclaredType) t).asElement().toString()) {
-                                        case "io.jpalite.repository.JpaRepository" -> addJpaRepository(out, (DeclaredType) t);
-                                        case "io.jpalite.repository.PagingRepository" -> addPagingRepository(out, (DeclaredType) t);
+                                        case "org.jpalite.repository.JpaRepository" -> addJpaRepository(out, (DeclaredType) t);
+                                        case "org.jpalite.repository.PagingRepository" -> addPagingRepository(out, (DeclaredType) t);
                                         default -> {
                                             //Ignore the rest
                                         }

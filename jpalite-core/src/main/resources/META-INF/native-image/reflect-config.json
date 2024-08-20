@@ -1,6 +1,6 @@
 [
   {
-    "name": "io.jpalite.impl.JPALiteEntityManagerImpl",
+    "name": "org.jpalite.impl.JPALiteEntityManagerImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -10,7 +10,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.impl.db.DatabasePoolImpl",
+    "name": "org.jpalite.impl.db.DatabasePoolImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -20,7 +20,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
+    "name": "org.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -30,7 +30,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.impl.providers.JPALitePersistenceProviderImpl",
+    "name": "org.jpalite.impl.providers.JPALitePersistenceProviderImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -40,7 +40,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
+    "name": "org.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
@@ -50,7 +50,7 @@
     "unsafeAllocated": true
   },
   {
-    "name": "io.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
+    "name": "org.jpalite.impl.providers.JPALiteEntityManagerFactoryImpl",
     "allDeclaredConstructors": true,
     "allPublicConstructors": true,
     "allDeclaredMethods": true,
