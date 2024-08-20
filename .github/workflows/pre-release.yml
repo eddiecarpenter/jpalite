@@ -1,4 +1,4 @@
-name: Quarkiverse Pre Release
+name: JPALite Pre Release
 
 on:
   pull_request:

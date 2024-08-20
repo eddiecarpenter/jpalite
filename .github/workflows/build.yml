@@ -1,4 +1,4 @@
-name: Build
+name: JPALite Build
 
 on:
   push:
