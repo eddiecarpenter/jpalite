@@ -15,4 +15,4 @@
 #  limitations under the License.
 #
 
-io.jpalite.impl.providers.JPALitePersistenceProviderImpl
+org.jpalite.impl.providers.JPALitePersistenceProviderImpl

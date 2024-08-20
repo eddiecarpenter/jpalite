@@ -57,7 +57,7 @@ In the case of dependency injection, the Java Transaction API will control if a 
 == EntityManagerFactory
 
 The entity manager is constructed by passing it the name of the Persistence Unit name it should use to create the database connection.
-The EntityManagerFactory resolves the PersistenceUnit name using the SPI service looking implementers of the `io.jpalite.PersistenceUnitProvider` interface.
+The EntityManagerFactory resolves the PersistenceUnit name using the SPI service looking implementers of the `org.jpalite.PersistenceUnitProvider` interface.
 The interface will return an object that implements the `jakarta.persistence.spi.PersistenceUnitInfo` interface.
 
 === Entity Transaction
