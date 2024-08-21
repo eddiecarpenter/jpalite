@@ -17,38 +17,38 @@
 
 package org.jpalite.extension;
 
-import org.jpalite.impl.CustomPersistenceUnit;
 import io.smallrye.config.SmallRyeConfig;
 import jakarta.persistence.PersistenceException;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.jpalite.impl.CustomPersistenceUnit;
 
 public class PersistenceUnitProperties extends CustomPersistenceUnit
 {
 
-	public PersistenceUnitProperties(String unitName)
-	{
-		super(unitName);
+    public PersistenceUnitProperties(String unitName)
+    {
+        super(unitName);
 
-		Config configProvider = ConfigProvider.getConfig();
-		SmallRyeConfig config = configProvider.unwrap(SmallRyeConfig.class);
-		JPALiteConfigMapping jpaConfigMapping = config.getConfigMapping(JPALiteConfigMapping.class);
-		JPALiteConfigMapping.PersistenceUnitConfig unitConfig = jpaConfigMapping.getPersistenceUnit(unitName);
-		if (unitConfig == null) {
-			throw new PersistenceException("Persistent Unit '" + unitName + "' not found");
-		}//if
+        Config configProvider = ConfigProvider.getConfig();
+        SmallRyeConfig config = configProvider.unwrap(SmallRyeConfig.class);
+        JPALiteConfigMapping jpaConfigMapping = config.getConfigMapping(JPALiteConfigMapping.class);
+        PersistenceUnitConfig unitConfig = jpaConfigMapping.getPersistenceUnit(unitName);
+        if (unitConfig == null) {
+            throw new PersistenceException("Persistent Unit '" + unitName + "' not found");
+        }//if
 
-		getProperties().putAll(unitConfig.properties());
-		setMultiTenantMode(unitConfig.multiTenant());
-		setTransactionType(unitConfig.transactionType());
-		setDataSourceName(unitConfig.datasourceName());
-		setCacheRegionPrefix(unitConfig.cacheRegionPrefix());
-		setCacheFormat(unitConfig.cacheFormat());
-		setSharedCacheMode(unitConfig.sharedCacheMode());
-		setValidationMode(unitConfig.validationMode());
-		setCacheClient(unitConfig.cacheClient());
-		setCacheProvider(unitConfig.cacheProvider());
-		setCacheConfig(unitConfig.cacheConfig());
-	}//PersistenceUnitProperties
+        getProperties().putAll(unitConfig.properties());
+        setMultiTenantMode(unitConfig.multiTenant());
+        setTransactionType(unitConfig.transactionType());
+        setDataSourceName(unitConfig.datasourceName());
+        setCacheRegionPrefix(unitConfig.cacheRegionPrefix());
+        setCacheFormat(unitConfig.cacheFormat());
+        setSharedCacheMode(unitConfig.sharedCacheMode());
+        setValidationMode(unitConfig.validationMode());
+        setCacheClient(unitConfig.cacheClient());
+        setCacheProvider(unitConfig.cacheProvider());
+        setCacheConfig(unitConfig.cacheConfig());
+    }//PersistenceUnitProperties
 
 }//PersistenceUnitProperties
