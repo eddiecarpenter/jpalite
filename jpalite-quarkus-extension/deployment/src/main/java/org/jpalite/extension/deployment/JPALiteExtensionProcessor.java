@@ -39,6 +39,7 @@ import org.jpalite.PersistenceUnit;
 import org.jpalite.agroal.AgroalDataSourceProvider;
 import org.jpalite.extension.JPALiteConfigMapping;
 import org.jpalite.extension.JPALiteRecorder;
+import org.jpalite.extension.PersistenceUnitConfig;
 import org.jpalite.extension.PropertyPersistenceUnitProvider;
 import org.jpalite.impl.fieldtypes.*;
 import org.slf4j.Logger;
@@ -55,6 +56,7 @@ class JPALiteExtensionProcessor
     private static final DotName ENTITY_MANAGER_FACTORY = DotName.createSimple("jakarta.persistence.EntityManagerFactory");
     public static final DotName ENTITY_MANAGER = DotName.createSimple("jakarta.persistence.EntityManager");
     public static final DotName PERSISTENCE_UNIT_CONFIG = DotName.createSimple("org.jpalite.extension.PersistenceUnitConfig");
+    public static final DotName PERSISTENCE_UNIT = DotName.createSimple("org.jpalite.PersistenceUnit");
 
     private static final Logger LOG = LoggerFactory.getLogger(JPALiteExtensionProcessor.class);
 
@@ -102,30 +104,13 @@ class JPALiteExtensionProcessor
                                         BuildProducer<PersistenceUnitBuildItem> persistenceUnits)
     {
         Set<String> persistenceUnitNames = new HashSet<>();
-        for (AnnotationInstance annotation : index.getIndex().getAnnotations(ENTITY_MANAGER)) {
+        for (AnnotationInstance annotation : index.getIndex().getAnnotations(PERSISTENCE_UNIT)) {
             if (annotation.value() == null) {
                 persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
             } else {
                 persistenceUnitNames.add((String) annotation.value().value());
             }
         }
-
-        for (AnnotationInstance annotation : index.getIndex().getAnnotations(ENTITY_MANAGER_FACTORY)) {
-            if (annotation.value() == null) {
-                persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
-            } else {
-                persistenceUnitNames.add((String) annotation.value().value());
-            }
-        }
-
-        for (AnnotationInstance annotation : index.getIndex().getAnnotations(PERSISTENCE_UNIT_CONFIG)) {
-            if (annotation.value() == null) {
-                persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
-            } else {
-                persistenceUnitNames.add((String) annotation.value().value());
-            }
-        }
-
         persistenceUnitNames.forEach(n -> persistenceUnits.produce(new PersistenceUnitBuildItem(n)));
     }
 
@@ -155,6 +140,15 @@ class JPALiteExtensionProcessor
                             .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
                             .done());
 
+            syntheticBeanBuildItemBuildProducer.produce(
+                    createSyntheticBean(p.getPersistenceUnitName(),
+                                        PersistenceUnitConfig.class,
+                                        PERSISTENCE_UNIT_CONFIG,
+                                        p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
+                            .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
+                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                            .done());
 
             //The user could also explicitly set the persistenceUnit to "<default>"
             //if the persistence unit is equal to "<default>" register an injection point the above
@@ -171,6 +165,16 @@ class JPALiteExtensionProcessor
                         createSyntheticBean(p.getPersistenceUnitName(),
                                             EntityManager.class,
                                             ENTITY_MANAGER,
+                                            false)
+                                .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
+                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                                .done());
+
+                syntheticBeanBuildItemBuildProducer.produce(
+                        createSyntheticBean(p.getPersistenceUnitName(),
+                                            PersistenceUnitConfig.class,
+                                            PERSISTENCE_UNIT_CONFIG,
                                             false)
                                 .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
                                 .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
