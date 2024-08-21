@@ -21,6 +21,7 @@ import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.NativeImageResourceBuildItem;
 import io.quarkus.deployment.builditem.nativeimage.ReflectiveClassBuildItem;
@@ -30,15 +31,22 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
+import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
-import org.jpalite.*;
+import org.jpalite.EntityMetaDataManager;
+import org.jpalite.PersistenceUnit;
+import org.jpalite.agroal.AgroalDataSourceProvider;
 import org.jpalite.extension.JPALiteConfigMapping;
 import org.jpalite.extension.JPALiteRecorder;
+import org.jpalite.extension.PropertyPersistenceUnitProvider;
+import org.jpalite.impl.fieldtypes.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 
@@ -46,11 +54,11 @@ class JPALiteExtensionProcessor
 {
     private static final DotName ENTITY_MANAGER_FACTORY = DotName.createSimple("jakarta.persistence.EntityManagerFactory");
     public static final DotName ENTITY_MANAGER = DotName.createSimple("jakarta.persistence.EntityManager");
+    public static final DotName PERSISTENCE_UNIT_CONFIG = DotName.createSimple("org.jpalite.extension.PersistenceUnitConfig");
+
     private static final Logger LOG = LoggerFactory.getLogger(JPALiteExtensionProcessor.class);
 
-    private static final String DEFAULT_NAME = "<default>";
-
-    private static final String FEATURE = "jpalite-extension";
+    private static final String FEATURE = "jpalite";
 
     @BuildStep
     FeatureBuildItem feature()
@@ -69,98 +77,109 @@ class JPALiteExtensionProcessor
     @BuildStep
     ReflectiveClassBuildItem reflection()
     {
-        return ReflectiveClassBuildItem.builder(DataSourceProvider.class,
-                                                PersistenceUnitProvider.class,
-                                                FieldConvertType.class,
-                                                EntityMetaDataManager.class)
+        return ReflectiveClassBuildItem.builder(AgroalDataSourceProvider.class,
+                                                PropertyPersistenceUnitProvider.class,
+                                                EntityMetaDataManager.class,
+                                                BooleanFieldType.class,
+                                                IntegerFieldType.class,
+                                                LongLongFieldType.class,
+                                                DoubleDoubleFieldType.class,
+                                                BoolFieldType.class,
+                                                IntFieldType.class,
+                                                LongFieldType.class,
+                                                DoubleFieldType.class,
+                                                StringFieldType.class,
+                                                BytesFieldType.class,
+                                                TimestampFieldType.class,
+                                                LocalDateTimeFieldType.class,
+                                                BigDecimalFieldType.class)
+                                       .methods().fields().constructors()
                                        .build();
+    }
+
+    @BuildStep
+    public void discoverInjectedClients(CombinedIndexBuildItem index,
+                                        BuildProducer<PersistenceUnitBuildItem> persistenceUnits)
+    {
+        Set<String> persistenceUnitNames = new HashSet<>();
+        for (AnnotationInstance annotation : index.getIndex().getAnnotations(ENTITY_MANAGER)) {
+            if (annotation.value() == null) {
+                persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
+            } else {
+                persistenceUnitNames.add((String) annotation.value().value());
+            }
+        }
+
+        for (AnnotationInstance annotation : index.getIndex().getAnnotations(ENTITY_MANAGER_FACTORY)) {
+            if (annotation.value() == null) {
+                persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
+            } else {
+                persistenceUnitNames.add((String) annotation.value().value());
+            }
+        }
+
+        for (AnnotationInstance annotation : index.getIndex().getAnnotations(PERSISTENCE_UNIT_CONFIG)) {
+            if (annotation.value() == null) {
+                persistenceUnitNames.add(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME);
+            } else {
+                persistenceUnitNames.add((String) annotation.value().value());
+            }
+        }
+
+        persistenceUnitNames.forEach(n -> persistenceUnits.produce(new PersistenceUnitBuildItem(n)));
     }
 
     @Record(RUNTIME_INIT)
     @BuildStep
     void generateJPABeans(JPALiteRecorder recorder,
                           JPALiteConfigMapping jpaConfigMapping,
+                          List<PersistenceUnitBuildItem> persistenceUnits,
                           BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer)
     {
-        if (jpaConfigMapping.defaultPersistenceUnit() != null) {
-            //Define the default EntityManagerFactory producer
-            syntheticBeanBuildItemBuildProducer
-                    .produce(createSyntheticBean(DEFAULT_NAME,
-                                                 false,
-                                                 EntityManagerFactory.class,
-                                                 List.of(ENTITY_MANAGER_FACTORY)
-                            , true)
-                                     .createWith(recorder.entityManagerFactorySupplier(DEFAULT_NAME))
-                                     .done());
+        persistenceUnits.forEach(p -> {
+            syntheticBeanBuildItemBuildProducer.produce(
+                    createSyntheticBean(p.getPersistenceUnitName(),
+                                        EntityManagerFactory.class,
+                                        ENTITY_MANAGER_FACTORY,
+                                        p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
+                            .createWith(recorder.entityManagerFactorySupplier(p.getPersistenceUnitName()))
+                            .done());
 
-            //Define the default EntityManager producer
-            syntheticBeanBuildItemBuildProducer
-                    .produce(createSyntheticBean(DEFAULT_NAME,
-                                                 false,
-                                                 EntityManager.class,
-                                                 List.of(ENTITY_MANAGER)
-                            , true)
-                                     .createWith(recorder.entityManagerSupplier(DEFAULT_NAME))
-                                     .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                                     .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
-                                     .done());
-        }//if
+            syntheticBeanBuildItemBuildProducer.produce(
+                    createSyntheticBean(p.getPersistenceUnitName(),
+                                        EntityManager.class,
+                                        ENTITY_MANAGER,
+                                        p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
+                            .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
+                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                            .done());
 
-
-        if (jpaConfigMapping.namedPersistenceUnits() != null) {
-            for (String unitName : jpaConfigMapping.namedPersistenceUnits().keySet()) {
-                //Define the named EntityManagerFactory producer
-                syntheticBeanBuildItemBuildProducer
-                        .produce(createSyntheticBean(unitName,
-                                                     true,
-                                                     EntityManagerFactory.class,
-                                                     List.of(ENTITY_MANAGER_FACTORY)
-                                , false)
-                                         .createWith(recorder.entityManagerFactorySupplier(unitName))
-                                         .done());
-
-                //Define the named EntityManager producer
-                syntheticBeanBuildItemBuildProducer
-                        .produce(createSyntheticBean(unitName,
-                                                     true,
-                                                     EntityManager.class,
-                                                     List.of(ENTITY_MANAGER)
-                                , false)
-                                         .createWith(recorder.entityManagerSupplier(unitName))
-                                         .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                                         .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
-                                         .done());
-
-            }
-        }//if
+        });
     }
 
     private static <T> SyntheticBeanBuildItem.ExtendedBeanConfigurator createSyntheticBean(String persistenceUnitName,
-                                                                                           boolean isNamedPersistenceUnit,
                                                                                            Class<T> type,
-                                                                                           List<DotName> allExposedTypes,
-                                                                                           boolean defaultBean)
+                                                                                           DotName exposedType,
+                                                                                           boolean isDefaultConfig)
     {
         LOG.info("Creating Synthetic Bean for {}(\"{}\")", type.getSimpleName(), persistenceUnitName);
         SyntheticBeanBuildItem.ExtendedBeanConfigurator configurator = SyntheticBeanBuildItem
                 .configure(type)
                 .scope(ApplicationScoped.class)
                 .unremovable()
-                .setRuntimeInit();
+                .setRuntimeInit()
+                .addType(exposedType);
 
-        for (DotName exposedType : allExposedTypes) {
-            configurator.addType(exposedType);
-        }
-
-        if (defaultBean) {
+        if (isDefaultConfig) {
             configurator.defaultBean();
-        }
-
-        if (isNamedPersistenceUnit) {
-            configurator.addQualifier().annotation(PersistenceUnit.class).addValue("value", persistenceUnitName).done();
+            configurator.addQualifier(Default.class)
+                        .addQualifier(PersistenceUnit.class);
         } else {
-            configurator.addQualifier(Default.class);
-            configurator.addQualifier().annotation(PersistenceUnit.class).done();
+            configurator.addQualifier()
+                        .annotation(PersistenceUnit.class)
+                        .addValue("value", persistenceUnitName)
+                        .done();
         }
 
         return configurator;
