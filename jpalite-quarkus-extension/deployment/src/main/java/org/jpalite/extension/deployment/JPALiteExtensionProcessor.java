@@ -155,6 +155,28 @@ class JPALiteExtensionProcessor
                             .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
                             .done());
 
+
+            //The user could also explicitly set the persistenceUnit to "<default>"
+            //if the persistence unit is equal to "<default>" register an injection point the above
+            if (p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME)) {
+                syntheticBeanBuildItemBuildProducer.produce(
+                        createSyntheticBean(p.getPersistenceUnitName(),
+                                            EntityManagerFactory.class,
+                                            ENTITY_MANAGER_FACTORY,
+                                            false)
+                                .createWith(recorder.entityManagerFactorySupplier(p.getPersistenceUnitName()))
+                                .done());
+
+                syntheticBeanBuildItemBuildProducer.produce(
+                        createSyntheticBean(p.getPersistenceUnitName(),
+                                            EntityManager.class,
+                                            ENTITY_MANAGER,
+                                            false)
+                                .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
+                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
+                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                                .done());
+            }
         });
     }
 
