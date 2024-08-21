@@ -3,6 +3,7 @@ package org.jpalite.caching.infinispan;
 import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.infinispan.client.runtime.InfinispanClientProducer;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.configuration.StringConfiguration;
@@ -14,7 +15,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
-
+@RegisterForReflection
 public class JPALiteInfinispanCache implements JPACache
 {
     private static final String REGION_TIMESTAMP_NAME = "org.jpalite.region.$timestamps$";
