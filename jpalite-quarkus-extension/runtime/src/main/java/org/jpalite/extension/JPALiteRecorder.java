@@ -48,9 +48,9 @@ public class JPALiteRecorder
             TransactionManager transactionManager = context.getInjectedReference(TransactionManager.class);
             TransactionSynchronizationRegistry transactionSynchronizationRegistry = context.getInjectedReference(TransactionSynchronizationRegistry.class);
             EntityManagerFactory factory = entityManagerFactoryList.computeIfAbsent(persistenceUnitName, Persistence::createEntityManagerFactory);
-            return (EntityManager) new TransactionScopedEntityManagerImpl(factory,
-                                                                          transactionManager,
-                                                                          transactionSynchronizationRegistry);
+            return new TransactionScopedEntityManagerImpl(factory,
+                                                          transactionManager,
+                                                          transactionSynchronizationRegistry);
         };
     }
 
@@ -60,8 +60,8 @@ public class JPALiteRecorder
         TransactionSynchronizationRegistry transactionSynchronizationRegistry = Arc.container().instance(TransactionSynchronizationRegistry.class).orElse(null);
 
         EntityManagerFactory factory = entityManagerFactoryList.computeIfAbsent(persistenceUnit, Persistence::createEntityManagerFactory);
-        return (EntityManager) new TransactionScopedEntityManagerImpl(factory,
-                                                                      transactionManager,
-                                                                      transactionSynchronizationRegistry);
+        return new TransactionScopedEntityManagerImpl(factory,
+                                                      transactionManager,
+                                                      transactionSynchronizationRegistry);
     }//getEntityManager
 }
