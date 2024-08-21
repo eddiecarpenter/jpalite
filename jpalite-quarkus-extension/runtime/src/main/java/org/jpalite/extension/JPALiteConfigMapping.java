@@ -32,16 +32,10 @@ import org.jpalite.impl.CacheFormat;
 import java.util.Map;
 
 @ConfigMapping(prefix = "jpalite.persistenceUnit")
-@ConfigRoot(phase = ConfigPhase.BUILD_AND_RUN_TIME_FIXED)
+@ConfigRoot(phase = ConfigPhase.RUN_TIME)
 public interface JPALiteConfigMapping
 {
-    /**
-     * The default persistenceUnit
-     *
-     * @return The default value
-     */
-    @WithParentName
-    PersistenceUnitConfig defaultPersistenceUnit();
+    String DEFAULT_PERSISTENCE_UNIT_NAME = "<default>";
 
     /**
      * The defined units
@@ -50,6 +44,8 @@ public interface JPALiteConfigMapping
      */
     @ConfigDocSection
     @ConfigDocMapKey("name")
+    @WithUnnamedKey(DEFAULT_PERSISTENCE_UNIT_NAME)
+    @WithDefaults
     @WithParentName
     Map<String, PersistenceUnitConfig> namedPersistenceUnits();
 
@@ -182,10 +178,6 @@ public interface JPALiteConfigMapping
 
     default PersistenceUnitConfig getPersistenceUnit(String persistenceUnitName)
     {
-        if ("<default>".equals(persistenceUnitName)) {
-            return defaultPersistenceUnit();
-        }//if
-
         return namedPersistenceUnits().get(persistenceUnitName);
     }//getPersistenceUnit
 }//JPAConfigMapping
