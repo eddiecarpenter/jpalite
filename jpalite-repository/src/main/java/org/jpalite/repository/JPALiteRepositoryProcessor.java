@@ -437,7 +437,7 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
             if (annotation.persistenceUnit().startsWith("${")) {
                 out.println("  JPALiteRecorder producer = Arc.container().instance(JPALiteRecorder.class).get();");
                 out.print("   return producer.getEntityManager(JpaRepositoryUtil.getPersistenceUnitName(\"");
-                out.print(annotation.persistenceUnit());
+                out.print(annotation.persistenceUnit().substring(2, annotation.persistenceUnit().length() - 3));
                 out.println("\"));");
             }//if
             else {
