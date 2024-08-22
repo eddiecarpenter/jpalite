@@ -29,17 +29,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.TransactionSynchronizationRegistry;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassType;
 import org.jboss.jandex.DotName;
 import org.jpalite.EntityMetaDataManager;
 import org.jpalite.PersistenceUnit;
 import org.jpalite.agroal.AgroalDataSourceProvider;
+import org.jpalite.extension.EntityManagerProducer;
 import org.jpalite.extension.JPALiteConfigMapping;
 import org.jpalite.extension.JPALiteRecorder;
-import org.jpalite.extension.PersistenceUnitConfig;
 import org.jpalite.extension.PropertyPersistenceUnitProvider;
 import org.jpalite.impl.fieldtypes.*;
 import org.slf4j.Logger;
@@ -54,9 +52,9 @@ import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 class JPALiteExtensionProcessor
 {
     private static final DotName ENTITY_MANAGER_FACTORY = DotName.createSimple("jakarta.persistence.EntityManagerFactory");
-    public static final DotName ENTITY_MANAGER = DotName.createSimple("jakarta.persistence.EntityManager");
-    public static final DotName PERSISTENCE_UNIT_CONFIG = DotName.createSimple("org.jpalite.extension.PersistenceUnitConfig");
-    public static final DotName PERSISTENCE_UNIT = DotName.createSimple("org.jpalite.PersistenceUnit");
+    private static final DotName ENTITY_MANAGER = DotName.createSimple("jakarta.persistence.EntityManager");
+    private static final DotName PERSISTENCE_UNIT = DotName.createSimple("org.jpalite.PersistenceUnit");
+    private static final ClassType ENTITY_MANAGER_PRODUCER = ClassType.create(DotName.createSimple(EntityManagerProducer.class));
 
     private static final Logger LOG = LoggerFactory.getLogger(JPALiteExtensionProcessor.class);
 
@@ -117,7 +115,6 @@ class JPALiteExtensionProcessor
     @Record(RUNTIME_INIT)
     @BuildStep
     void generateJPABeans(JPALiteRecorder recorder,
-                          JPALiteConfigMapping jpaConfigMapping,
                           List<PersistenceUnitBuildItem> persistenceUnits,
                           BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItemBuildProducer)
     {
@@ -128,6 +125,7 @@ class JPALiteExtensionProcessor
                                         ENTITY_MANAGER_FACTORY,
                                         p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
                             .createWith(recorder.entityManagerFactorySupplier(p.getPersistenceUnitName()))
+                            .addInjectionPoint(ENTITY_MANAGER_PRODUCER)
                             .done());
 
             syntheticBeanBuildItemBuildProducer.produce(
@@ -136,18 +134,7 @@ class JPALiteExtensionProcessor
                                         ENTITY_MANAGER,
                                         p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
                             .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
-                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
-                            .done());
-
-            syntheticBeanBuildItemBuildProducer.produce(
-                    createSyntheticBean(p.getPersistenceUnitName(),
-                                        PersistenceUnitConfig.class,
-                                        PERSISTENCE_UNIT_CONFIG,
-                                        p.getPersistenceUnitName().equals(JPALiteConfigMapping.DEFAULT_PERSISTENCE_UNIT_NAME))
-                            .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
-                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                            .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                            .addInjectionPoint(ENTITY_MANAGER_PRODUCER)
                             .done());
 
             //The user could also explicitly set the persistenceUnit to "<default>"
@@ -159,6 +146,7 @@ class JPALiteExtensionProcessor
                                             ENTITY_MANAGER_FACTORY,
                                             false)
                                 .createWith(recorder.entityManagerFactorySupplier(p.getPersistenceUnitName()))
+                                .addInjectionPoint(ENTITY_MANAGER_PRODUCER)
                                 .done());
 
                 syntheticBeanBuildItemBuildProducer.produce(
@@ -167,18 +155,7 @@ class JPALiteExtensionProcessor
                                             ENTITY_MANAGER,
                                             false)
                                 .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
-                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
-                                .done());
-
-                syntheticBeanBuildItemBuildProducer.produce(
-                        createSyntheticBean(p.getPersistenceUnitName(),
-                                            PersistenceUnitConfig.class,
-                                            PERSISTENCE_UNIT_CONFIG,
-                                            false)
-                                .createWith(recorder.entityManagerSupplier(p.getPersistenceUnitName()))
-                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionManager.class)))
-                                .addInjectionPoint(ClassType.create(DotName.createSimple(TransactionSynchronizationRegistry.class)))
+                                .addInjectionPoint(ENTITY_MANAGER_PRODUCER)
                                 .done());
             }
         });

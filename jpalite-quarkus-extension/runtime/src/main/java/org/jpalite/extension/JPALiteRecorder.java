@@ -17,51 +17,31 @@
 
 package org.jpalite.extension;
 
-import io.quarkus.arc.Arc;
 import io.quarkus.arc.SyntheticCreationalContext;
 import io.quarkus.runtime.annotations.Recorder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-import jakarta.transaction.TransactionManager;
-import jakarta.transaction.TransactionSynchronizationRegistry;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 @Slf4j
 @Recorder
 public class JPALiteRecorder
 {
-    private final Map<String, EntityManagerFactory> entityManagerFactoryList = new ConcurrentHashMap<>();
-
     public Function<SyntheticCreationalContext<EntityManagerFactory>, EntityManagerFactory> entityManagerFactorySupplier(String persistenceUnitName)
     {
-        return context -> entityManagerFactoryList.computeIfAbsent(persistenceUnitName, Persistence::createEntityManagerFactory);
+        return context -> {
+            EntityManagerProducer producer = context.getInjectedReference(EntityManagerProducer.class);
+            return producer.getEntityManagerFactory(persistenceUnitName);
+        };
     }
 
     public Function<SyntheticCreationalContext<EntityManager>, EntityManager> entityManagerSupplier(String persistenceUnitName)
     {
         return context -> {
-            TransactionManager transactionManager = context.getInjectedReference(TransactionManager.class);
-            TransactionSynchronizationRegistry transactionSynchronizationRegistry = context.getInjectedReference(TransactionSynchronizationRegistry.class);
-            EntityManagerFactory factory = entityManagerFactoryList.computeIfAbsent(persistenceUnitName, Persistence::createEntityManagerFactory);
-            return new TransactionScopedEntityManagerImpl(factory,
-                                                          transactionManager,
-                                                          transactionSynchronizationRegistry);
+            EntityManagerProducer producer = context.getInjectedReference(EntityManagerProducer.class);
+            return producer.getEntityManager(persistenceUnitName);
         };
     }
-
-    public EntityManager getEntityManager(String persistenceUnit)
-    {
-        TransactionManager transactionManager = Arc.container().instance(TransactionManager.class).orElse(null);
-        TransactionSynchronizationRegistry transactionSynchronizationRegistry = Arc.container().instance(TransactionSynchronizationRegistry.class).orElse(null);
-
-        EntityManagerFactory factory = entityManagerFactoryList.computeIfAbsent(persistenceUnit, Persistence::createEntityManagerFactory);
-        return new TransactionScopedEntityManagerImpl(factory,
-                                                      transactionManager,
-                                                      transactionSynchronizationRegistry);
-    }//getEntityManager
 }
