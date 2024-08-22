@@ -425,24 +425,14 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
 
             out.println(" {");
 
-            if (!annotation.persistenceUnit().startsWith("${")) {
-                out.println("  @Inject");
-                out.print("  @PersistenceUnit(\"");
-                out.print(annotation.persistenceUnit());
-                out.println("\")");
-                out.println("  EntityManager em;");
-            }//if
+            out.println("  @Inject");
+            out.print("  @PersistenceUnit(\"");
+            out.print(annotation.persistenceUnit());
+            out.println("\")");
+            out.println("  EntityManager em;");
 
             out.println("public EntityManager getEntityManager() {");
-            if (annotation.persistenceUnit().startsWith("${")) {
-                out.println("  EntityManagerProducer producer = Arc.container().instance(EntityManagerProducer.class).get();");
-                out.print("   return producer.getEntityManager(JpaRepositoryUtil.getPersistenceUnitName(\"");
-                out.print(annotation.persistenceUnit().substring(2, annotation.persistenceUnit().length() - 3));
-                out.println("\"));");
-            }//if
-            else {
-                out.println("   return em;");
-            }//else
+            out.println("   return em;");
             out.println("}");
 
             repoElement.getInterfaces()
