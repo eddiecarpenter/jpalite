@@ -405,7 +405,6 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
             out.println("import java.util.*;");
             out.println("import org.jpalite.PersistenceUnit;");
             out.println("import org.jpalite.repository.*;");
-            out.println("import org.jpalite.extension.EntityManagerProducer;");
             out.println();
 
             SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
