@@ -65,8 +65,13 @@ public class EntityCacheImpl implements EntityCache
         inTransaction = false;
         if (CACHING_ENABLED && !persistenceUnit.getSharedCacheMode().equals(SharedCacheMode.NONE)) {
             try {
-                Class<JPACache> jpaCacheClass = (Class<JPACache>) Thread.currentThread().getContextClassLoader().loadClass(persistenceUnit.getCacheProvider());
-                jpaCache = jpaCacheClass.getConstructor(String.class, String.class, String.class).newInstance(persistenceUnit.getCacheClient(), persistenceUnit.getCacheConfig(), persistenceUnit.getCacheRegionPrefix());
+                if (persistenceUnit.getCacheProvider() == null) {
+                    LOG.warn("Level 2 caching is enabled but no caching provider is defined");
+                    jpaCache = null;
+                } else {
+                    Class<JPACache> jpaCacheClass = (Class<JPACache>) Thread.currentThread().getContextClassLoader().loadClass(persistenceUnit.getCacheProvider());
+                    jpaCache = jpaCacheClass.getConstructor(String.class, String.class, String.class).newInstance(persistenceUnit.getCacheClient(), persistenceUnit.getCacheConfig(), persistenceUnit.getCacheRegionPrefix());
+                }//else
             }
             catch (ClassNotFoundException | InvocationTargetException | InstantiationException |
                    IllegalAccessException | NoSuchMethodException ex) {

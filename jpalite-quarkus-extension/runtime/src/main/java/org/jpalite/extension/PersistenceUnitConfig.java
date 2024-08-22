@@ -10,6 +10,7 @@ import org.jpalite.JPALiteEntityManager;
 import org.jpalite.impl.CacheFormat;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface PersistenceUnitConfig
 {
@@ -42,9 +43,8 @@ public interface PersistenceUnitConfig
     /**
      * The name of the 2nd level cache provider that is to be used.
      */
-    @WithDefault("org.jpalite.impl.caching.JPALiteInfinispanCache")
     @WithName("cache-provider")
-    String cacheProvider();
+    Optional<String> cacheProvider();
 
     /**
      * The cache configuration to use when create a new cache

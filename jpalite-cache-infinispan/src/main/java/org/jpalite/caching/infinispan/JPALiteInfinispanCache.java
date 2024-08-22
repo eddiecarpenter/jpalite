@@ -4,6 +4,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.arc.InstanceHandle;
 import io.quarkus.infinispan.client.runtime.InfinispanClientProducer;
 import io.quarkus.runtime.annotations.RegisterForReflection;
+import lombok.extern.slf4j.Slf4j;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.commons.configuration.StringConfiguration;
@@ -16,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 
 @RegisterForReflection
+@Slf4j
 public class JPALiteInfinispanCache implements JPACache
 {
     private static final String REGION_TIMESTAMP_NAME = "org.jpalite.region.$timestamps$";
@@ -31,6 +33,7 @@ public class JPALiteInfinispanCache implements JPACache
         this.regionPrefix    = (regionPrefix == null || "<default>".equals(regionPrefix)) ? "" : regionPrefix + " - ";
         this.cacheClientName = cacheClientName;
         this.configuration   = configuration;
+        LOG.info("Loading '{}' as JPALite caching provider with region prefix ['{}']", JPALiteInfinispanCache.class.getCanonicalName(), regionPrefix);
     }
 
     private <T> RemoteCache<String, T> getCache(String cacheRegion)

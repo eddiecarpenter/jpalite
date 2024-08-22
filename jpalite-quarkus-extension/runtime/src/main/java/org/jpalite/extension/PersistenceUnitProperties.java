@@ -47,7 +47,7 @@ public class PersistenceUnitProperties extends CustomPersistenceUnit
         setSharedCacheMode(unitConfig.sharedCacheMode());
         setValidationMode(unitConfig.validationMode());
         setCacheClient(unitConfig.cacheClient());
-        setCacheProvider(unitConfig.cacheProvider());
+        setCacheProvider(unitConfig.cacheProvider().orElse(null));
         setCacheConfig(unitConfig.cacheConfig());
     }//PersistenceUnitProperties
 
