@@ -1,5 +1,6 @@
 package org.jpalite.extension;
 
+import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.persistence.EntityManager;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
+@Startup
 @Slf4j
 public class EntityManagerProducer
 {
