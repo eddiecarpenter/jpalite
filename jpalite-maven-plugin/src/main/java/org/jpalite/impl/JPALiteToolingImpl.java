@@ -228,60 +228,66 @@ public class JPALiteToolingImpl implements JPALiteTooling
                 processClass(ctClass);
             }//for
 
-            try (FileOutputStream outputStream = new FileOutputStream(outputDir + "/META-INF/persistenceUnits.properties");
-                 FileOutputStream nativeImageStream = new FileOutputStream(outputDir + "/META-INF/native-image/org.jpalite.persistent/reflect-config.json")) {
-                nativeImageStream.write("[\n".getBytes());
-                boolean first = true;
-                for (Map.Entry<String, String> entry : entityClasses.entrySet()) {
-                    outputStream.write(entry.getKey().getBytes());
-                    outputStream.write('=');
-                    outputStream.write(entry.getValue().getBytes());
-                    outputStream.write('\n');
+            boolean first = true;
+            if (!entityClasses.isEmpty() || !converterClasses.isEmpty()) {
+                try (FileOutputStream outputStream = new FileOutputStream(outputDir + "/META-INF/persistenceUnits.properties");
+                     FileOutputStream nativeImageStream = new FileOutputStream(outputDir + "/META-INF/native-image/org.jpalite.persistent/reflect-config.json")) {
+                    nativeImageStream.write("[\n".getBytes());
 
-                    if (first) {
-                        first = false;
-                    } else {
-                        nativeImageStream.write(',');
-                    }//else
+                    for (Map.Entry<String, String> entry : entityClasses.entrySet()) {
+                        outputStream.write(entry.getKey().getBytes());
+                        outputStream.write('=');
+                        outputStream.write(entry.getValue().getBytes());
+                        outputStream.write('\n');
 
-                    nativeImageStream.write("{\n\"name\": \"".getBytes());
-                    nativeImageStream.write(entry.getValue().getBytes());
-                    nativeImageStream.write(vAttrs.getBytes());
+                        if (first) {
+                            first = false;
+                        } else {
+                            nativeImageStream.write(',');
+                        }//else
 
-                }
+                        nativeImageStream.write("{\n\"name\": \"".getBytes());
+                        nativeImageStream.write(entry.getValue().getBytes());
+                        nativeImageStream.write(vAttrs.getBytes());
 
-                try (FileOutputStream converterStream = new FileOutputStream(outputDir + "/META-INF/services/org.jpalite.FieldConvertType")) {
-                    for (CtClass convertClass : converterClasses) {
+                    }
 
-                        try {
-                            converterStream.write(convertClass.getName().getBytes());
-                            converterStream.write('\n');
+                    if (!converterClasses.isEmpty()) {
+                        try (FileOutputStream converterStream = new FileOutputStream(outputDir + "/META-INF/services/org.jpalite.FieldConvertType")) {
+                            for (CtClass convertClass : converterClasses) {
 
-                            if (first) {
-                                first = false;
-                            } else {
-                                nativeImageStream.write(',');
-                            }//else
+                                try {
+                                    converterStream.write(convertClass.getName().getBytes());
+                                    converterStream.write('\n');
 
-                            nativeImageStream.write("{\n\"name\": \"".getBytes());
-                            nativeImageStream.write(convertClass.getName().getBytes());
-                            nativeImageStream.write(vAttrs.getBytes());
+                                    if (first) {
+                                        first = false;
+                                    } else {
+                                        nativeImageStream.write(',');
+                                    }//else
 
-                            CtMethod convertToEntityAttribute = convertClass.getDeclaredMethod("convertToEntityAttribute");
-                            if (convertToEntityAttribute != null) {
-                                nativeImageStream.write(",{\n\"name\": \"".getBytes());
-                                nativeImageStream.write(convertToEntityAttribute.getReturnType().getName().getBytes());
-                                nativeImageStream.write(vAttrs.getBytes());
-                            }
-                        }
-                        catch (Exception ex) {
-                            LOG.error("Converter {} not correctly implemented", convertClass.getName());
-                        }
-                    }//for
+                                    nativeImageStream.write("{\n\"name\": \"".getBytes());
+                                    nativeImageStream.write(convertClass.getName().getBytes());
+                                    nativeImageStream.write(vAttrs.getBytes());
+
+                                    CtMethod convertToEntityAttribute = convertClass.getDeclaredMethod("convertToEntityAttribute");
+                                    if (convertToEntityAttribute != null) {
+                                        nativeImageStream.write(",{\n\"name\": \"".getBytes());
+                                        nativeImageStream.write(convertToEntityAttribute.getReturnType().getName().getBytes());
+                                        nativeImageStream.write(vAttrs.getBytes());
+                                    }
+                                }
+                                catch (Exception ex) {
+                                    LOG.error("Converter {} not correctly implemented", convertClass.getName());
+                                }
+                            }//for
+                        }//try
+
+                        nativeImageStream.write(']');
+                    }
                 }//try
+            }
 
-                nativeImageStream.write(']');
-            }//try
         }//try
         catch (NotFoundException ex) {
             throw new JPALiteToolingException(ERROR_PROCESSING_FILE, ex);
