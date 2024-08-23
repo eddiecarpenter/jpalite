@@ -85,7 +85,7 @@ public class EntityCacheImpl implements EntityCache
         Span span = TRACER.spanBuilder("EntityCache::find").setSpanKind(SpanKind.SERVER).startSpan();
         try (Scope ignored = span.makeCurrent()) {
             long start = System.currentTimeMillis();
-            if (jpaCache != null) {
+            if (jpaCache != null && primaryKey != null) {
                 EntityMetaData<T> metaData = EntityMetaDataManager.getMetaData(entityType);
                 if (metaData.isCacheable()) {
                     String key = primaryKey.toString();
@@ -175,7 +175,7 @@ public class EntityCacheImpl implements EntityCache
         Span span = TRACER.spanBuilder("EntityCache::contains").setSpanKind(SpanKind.SERVER).startSpan();
         try (Scope ignored = span.makeCurrent()) {
             EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(entityType);
-            if (jpaCache != null && metaData.isCacheable()) {
+            if (jpaCache != null && metaData.isCacheable() && primaryKey != null) {
                 return jpaCache.containsKey(metaData.getName(), primaryKey.toString());
             }//if
             return false;
@@ -191,7 +191,7 @@ public class EntityCacheImpl implements EntityCache
         Span span = TRACER.spanBuilder("EntityCache::evict using Primary key").setSpanKind(SpanKind.SERVER).startSpan();
         try (Scope ignored = span.makeCurrent()) {
             EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(entityType);
-            if (jpaCache != null && metaData.isCacheable()) {
+            if (jpaCache != null && metaData.isCacheable() && primaryKey != null) {
                 jpaCache.evict(metaData.getName(), primaryKey.toString());
             }//if
         }//try
