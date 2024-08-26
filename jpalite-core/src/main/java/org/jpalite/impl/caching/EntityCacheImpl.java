@@ -116,6 +116,17 @@ public class EntityCacheImpl implements EntityCache
                 }//else
             }//if
         }//try
+        catch (RuntimeException ex) {
+            LOG.warn("Error reading cached entity - {}", ex.getMessage());
+            /*
+             * Something is wrong with the cached version. Let's remove it
+             * and let the persistence layer read the record again from storage.
+             *
+             * If the caching provider has a problem (link is down etc.) then
+             * evicting the record will fail and generate an exception.
+             */
+            evict(entityType, primaryKey);
+        }
         finally {
             span.end();
         }//finally
