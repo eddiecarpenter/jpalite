@@ -113,7 +113,7 @@ public class JPAEntityImpl implements JPAEntity
             //Find all BASIC and ONE_TO_MANY fields that are flagged as being lazily fetched and add them to our $$fetchLazy list
             $$metadata.getEntityFields()
                       .stream()
-                      .filter(f -> f.getFetchType() == FetchType.LAZY && (f.getMappingType() == MappingType.BASIC || f.getMappingType() == MappingType.ONE_TO_MANY))
+                      .filter(f -> f.getFetchType() == FetchType.LAZY)
                       .forEach(f -> $$fetchLazy.add(f.getName()));
 
             //Force the default lock mode to OPTIMISTIC_FORCE_INCREMENT if the entity has a version field
@@ -151,9 +151,9 @@ public class JPAEntityImpl implements JPAEntity
     @Override
     public boolean equals(Object o)
     {
-		if (this == o) {
-			return true;
-		}
+        if (this == o) {
+            return true;
+        }
         if (o instanceof JPAEntityImpl e) {
             return _getPrimaryKey() != null && _getPrimaryKey().equals(e._getPrimaryKey());
         }
