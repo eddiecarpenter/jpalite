@@ -73,6 +73,9 @@ public class JPALiteQueryImpl<T> implements Query
      * True if selecting using primary key
      */
     private boolean selectUsingPrimaryKey = false;
+    /**
+     * The type of query statement being executed
+     */
     private QueryStatement queryStatement = QueryStatement.OTHER;
     /**
      * The parameters that have been set
@@ -766,10 +769,10 @@ public class JPALiteQueryImpl<T> implements Query
             }//if
 
 			/*
-			  Check that the correct parameters are have value.
+			  Check that the all the required parameters have values.
 			  Create a new list of parameters such that for every parameter used in the query
 			  an entry exists.
-			  The problem here is that for named parameters the same name could
+			  The problem here is that for named parameters, the same name could
 			  be used more than once in the query (which is okay)
 			 */
             List<QueryParameterImpl<?>> parameters = new ArrayList<>();
