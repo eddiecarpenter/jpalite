@@ -55,7 +55,7 @@ public class JPALiteToolingImpl implements JPALiteTooling
     private void applyLazyFetch(CtClass entityClass, CtField field) throws CannotCompileException, NotFoundException
     {
         //Id fields cannot be fetched lazily
-        if (!field.hasAnnotation(Id.class) && field.hasAnnotation(Column.class)) {
+        if (!field.hasAnnotation(Id.class) && (field.hasAnnotation(Column.class) || field.hasAnnotation(OneToMany.class) || field.hasAnnotation(JoinColumn.class))) {
             String fieldName = field.getName();
             String type = field.getType().getName();
             String vGetterMethod = ((type.equals(Boolean.class.getName()) || type.equals(boolean.class.getName()) ? "is" : "get") + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1));
