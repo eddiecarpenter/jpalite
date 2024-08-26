@@ -382,7 +382,7 @@ public class PersistenceContextImpl implements PersistenceContext
         this.connectionName = connectionName;
     }
 
-    @SuppressWarnings({"java:S1141", "java:S2077", "tainting"})
+    @SuppressWarnings({"java:S1141", "java:S2077"})
     //Having try-resource in a bigger try block is allowed. Dynamically formatted SQL is verified to be safe
     @Override
     @Nonnull
@@ -804,6 +804,15 @@ public class PersistenceContextImpl implements PersistenceContext
                          */
                         else if (action != INSERT && isOptimisticLocked(entity)) {
                             setRollbackOnly();
+
+                            /*
+                             Delete the cached record for the rare case where a cached record might be out of date.
+                             NOTE: This is highly unlikely and an error in itself.
+                             */
+                            if (entity._getMetaData().isCacheable()) {
+                                l2Cache().evict(entity._getEntityClass(), entity._getPrimaryKey());
+                            }//if
+
                             throw new OptimisticLockException(entity);
                         }//else if
                     }//try
