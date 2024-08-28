@@ -1,4 +1,4 @@
-:project-version: 3.0.1
+:project-version: 3.1.0
 :authors: Eddie Carpenter <eddie.carpenter@icloud.com>
 :copyright: Apache2
 :product-name:  JPALite
