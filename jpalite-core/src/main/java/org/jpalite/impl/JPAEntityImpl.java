@@ -110,7 +110,7 @@ public class JPAEntityImpl implements JPAEntity
         if (EntityMetaDataManager.isRegistered(getClass())) {
             $$metadata = EntityMetaDataManager.getMetaData(getClass());
 
-            //Find all BASIC and ONE_TO_MANY fields that are flagged as being lazily fetched and add them to our $$fetchLazy list
+            //Find all fields that are flagged as being lazily fetched and add them to our $$fetchLazy list
             $$metadata.getEntityFields()
                       .stream()
                       .filter(f -> f.getFetchType() == FetchType.LAZY)
