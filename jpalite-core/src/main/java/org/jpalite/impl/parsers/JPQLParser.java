@@ -25,13 +25,17 @@ import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.expression.operators.relational.NotEqualsTo;
+import net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionList;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.select.Join;
+import net.sf.jsqlparser.statement.select.OrderByElement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.update.Update;
 import net.sf.jsqlparser.statement.update.UpdateSet;
 import org.jpalite.*;
@@ -45,18 +49,19 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("java:S1452") //generic wildcard is required
-public class JPQLParser extends JsqlVistorBase implements QueryParser
+public class JPQLParser extends JPQLAdaptor implements QueryParser
 {
-
-    private enum Phase
+    private enum Context
     {
+        STATEMENT,
         FROM,
         JOIN,
         SELECT,
+        SUB_SELECT,
         WHERE,
         GROUP_BY,
         HAVING,
-        ORDERBY
+        ORDER_BY
     }
 
     /**
@@ -92,7 +97,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
     /**
      * State variable used to indicate that in section we are processing
      */
-    private Phase currentPhase = Phase.FROM;
+    // private Phase currentPhase = Phase.FROM;
     /**
      * The "from" table in the select statement
      */
@@ -106,7 +111,6 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
      */
     private FetchType overrideAllFetchType = null;
     private boolean selectUsingPrimaryKey = false;
-    private boolean usingSubSelect = false;
     private String tableAlias = null;
 
     public class EntityInfo
@@ -188,8 +192,9 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 
         try {
             Statement vStatement = CCJSqlParserUtil.parse(rawQuery);
-            vStatement.accept(this);
+            vStatement.accept(this, Context.STATEMENT);
             query = vStatement.toString().replace(":?", "?");
+            entityInfoList.clear();
         }//try
         catch (JSQLParserException ex) {
             throw new PersistenceException("Error parsing query", ex);
@@ -315,7 +320,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         }//if
     }//checkType
 
-    private void joinAccept(Join join)
+    private <S> void joinAccept(Join join, S context)
     {
         if (!join.getOnExpressions().isEmpty()) {
             throw new IllegalArgumentException("JOIN ON is not supported in JQPL - " + join);
@@ -336,7 +341,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             joinTable.setAlias(new Alias(joinAlias, false));
         }//else
 
-        joinTable.accept(this);
+        joinTable.accept(this, context);
         EntityInfo joinEntityInfo = findEntityInfoWithColAlias(joinAlias); // <alias>=d or <schema>.<table>=e.department
 
         /*
@@ -380,14 +385,14 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         }//if
     }//joinAccept
 
-    private void addJoin(Table table)
+    private <S> void addJoin(Table table, S context)
     {
         Join join = new Join();
         join.setInner(true);
         join.setRightItem(table);
 
         joins.add(join);
-        joinAccept(join);
+        joinAccept(join, context);
     }//addJoin
 
     private EntityInfo findMappedBy(String fieldName)
@@ -403,7 +408,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         return null;
     }//findMappedBy
 
-    private void expandEntity(boolean root, EntityMetaData<?> entity, String selectNr, String colAlias, EntityField entityField, String tableAlias, List<SelectItem> newList)
+    private <S> void expandEntity(boolean root, EntityMetaData<?> entity, String selectNr, String colAlias, EntityField entityField, String tableAlias, List<SelectItem<? extends Expression>> newList, S context)
     {
         String newTableAlias = tableAlias + "." + entityField.getName();
         if (!root) {
@@ -417,19 +422,19 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             //We will expand if FetchType is EAGER or if we have an existing JOIN on the Entity
             if (entityInfo != null || (overrideAllFetchType != null && overrideAllFetchType == FetchType.EAGER) || (overrideAllFetchType == null && entityField.getFetchType() == FetchType.EAGER)) {
                 if (entityInfo == null) {
-                    //if where have many to one mapping on the field, check if one of the other tables ( FROM and JOIN) have an ONE_TO_MANY link
+                    //if where have many-to-one mapping on the field, check if one of the other tables ( FROM and JOIN) have an ONE_TO_MANY link
                     //back to this entity
                     if (entityField.getMappingType() == MappingType.MANY_TO_ONE) {
                         EntityInfo info = findMappedBy(entityField.getName());
                         if (info != null) {
-                            getAllColumns(selectNr, colAlias, info.getMetadata(), info.getColumnAlias(), newList);
+                            getAllColumns(selectNr, colAlias, info.getMetadata(), info.getColumnAlias(), newList, context);
                             return;
                         }//if
                     }//if
 
                     Table table = new Table(tableAlias, entityField.getName());
                     table.setAlias(new Alias(tableAlias + "." + entityField.getName(), false));
-                    addJoin(table);
+                    addJoin(table, context);
                     entityInfo = findEntityInfoWithEntity(entityField.getType());
                 }//if
                 else {
@@ -438,7 +443,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                     }//if
                 }//else
 
-                getAllColumns(selectNr, colAlias, entityInfo.getMetadata(), newTableAlias, newList);
+                getAllColumns(selectNr, colAlias, entityInfo.getMetadata(), newTableAlias, newList, context);
             }//if
             else {
                 newList.add(createSelectColumn(entityField.getName(), selectNr + colAlias, tableAlias));
@@ -453,14 +458,14 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                 entityInfoList.add(entityInfo);
             }//if
 
-            getAllColumns(selectNr, colAlias, entityInfo.getMetadata(), newTableAlias, newList);
+            getAllColumns(selectNr, colAlias, entityInfo.getMetadata(), newTableAlias, newList, context);
         }//else
     }//expandEntity
 
-    private SelectItem createSelectColumn(String field, String colField, String tableAlias)
+    private SelectItem<Column> createSelectColumn(String field, String colField, String tableAlias)
     {
         Column newColumn = createColumn(field, tableAlias);
-        SelectExpressionItem newItem = new SelectExpressionItem(newColumn);
+        SelectItem<Column> newItem = new SelectItem<>(newColumn);
         if (colField != null) {
             newItem.setAlias(new Alias("\"" + colField + "\"", false));
         }//if
@@ -483,7 +488,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         return new Column(table, field);
     }//createColumn
 
-    private void getAllColumns(String selectNr, String colAlias, EntityMetaData<?> entity, String tableAlias, List<SelectItem> newList)
+    private <S> void getAllColumns(String selectNr, String colAlias, EntityMetaData<?> entity, String tableAlias, List<SelectItem<? extends Expression>> newList, S context)
     {
         for (EntityField field : entity.getEntityFields()) {
             if (field.getMappingType() == MappingType.BASIC) {
@@ -492,12 +497,12 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                 }//if
             }//if
             else {
-                expandEntity(false, entity, selectNr, colAlias, field, tableAlias, newList);
+                expandEntity(false, entity, selectNr, colAlias, field, tableAlias, newList, context);
             }//else
         }//for
     }//getAllColumns
 
-    private EntityInfo findEntity(String selectPath)
+    private <S> EntityInfo findEntity(String selectPath, S context)
     {
         EntityInfo entityInfo = findEntityInfoWithColAlias(selectPath);
         if (entityInfo != null) {
@@ -513,7 +518,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         String field = selectPath.substring(vDot + 1);
         entityInfo = findEntityInfoWithColAlias(path);
         if (entityInfo == null) {
-            entityInfo = findEntity(path);
+            entityInfo = findEntity(path, context);
         }//if
 
         EntityField entityField = entityInfo.getMetadata().getEntityField(field);
@@ -525,13 +530,13 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         else {
             Table table = new Table(path, field);
             table.setAlias(new Alias(path + "." + entityField.getName(), false));
-            addJoin(table);
+            addJoin(table, context);
         }//else
 
         return findEntityInfoWithColAlias(selectPath);
     }//findEntity
 
-    private void processSelectItem(String colLabel, SelectItem item, List<SelectItem> newList)
+    private <S> void processSelectItem(String colLabel, SelectItem<? extends Expression> selectItem, List<SelectItem<? extends Expression>> newList, S context)
     {
         /*
          * case 1. select e from Employee e
@@ -543,7 +548,6 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
          * <p>
          * processSelectItem() will be called for each item found
          */
-        SelectExpressionItem selectItem = (SelectExpressionItem) item;
         selectItem.setAlias(new Alias(colLabel, false));
         if (selectItem.getExpression() instanceof Column column) {
             if ("NEW".equalsIgnoreCase(column.getColumnName())) {
@@ -562,8 +566,8 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                 }//if
 
 
-                addResultType(colLabel, entityInfo.getMetadata().getEntityClass());
-                getAllColumns(colLabel, "", entityInfo.getMetadata(), column.getColumnName(), newList);
+                addResultType(colLabel, entityInfo.getMetadata().getEntityClass(), context);
+                getAllColumns(colLabel, "", entityInfo.getMetadata(), column.getColumnName(), newList, context);
             }//if
             else {
                 /*
@@ -573,49 +577,51 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                 String fullPath = column.getTable().getFullyQualifiedName();
 
                 //Find the Entity from the path
-                EntityInfo entityInfo = findEntity(fullPath);
+                EntityInfo entityInfo = findEntity(fullPath, context);
                 EntityField entityField = entityInfo.getMetadata().getEntityField(fieldName);
-                addResultType(colLabel, entityField.getType());
+                addResultType(colLabel, entityField.getType(), context);
 
                 if (entityField.getMappingType() == MappingType.BASIC) {
                     newList.add(createSelectColumn(entityField.getName(), colLabel, fullPath));
                 }//if
                 else {
-                    expandEntity(true, entityInfo.getMetadata(), colLabel, "", entityField, fullPath, newList);
+                    expandEntity(true, entityInfo.getMetadata(), colLabel, "", entityField, fullPath, newList, context);
                 }//else
             }//else
         }//if
         else {
             selectItem.setAlias(new Alias("\"" + colLabel + "\"", false));
-            newList.add(item);
+            newList.add(selectItem);
         }//else
     }//processSelectItem
 
-    private void processSelectItems(List<SelectItem> selectItems, List<SelectItem> newList)
+    @SuppressWarnings("unchecked")
+    private <S> void processSelectItems(List<SelectItem<? extends Expression>> selectItems, List<SelectItem<? extends Expression>> newList, S context)
     {
         for (int nr = 0; nr < selectItems.size(); nr++) {
             String colLabel = "c" + (nr + 1);
-            SelectItem item = selectItems.get(nr);
-            if (item instanceof SelectExpressionItem) {
-                processSelectItem(colLabel, item, newList);
-            }//if
-            else {
-                newList.add(item);
-            }//else
+            SelectItem<?> item = selectItems.get(nr);
+            processSelectItem(colLabel, item, newList, context);
         }//for
     }//processSelectItems
 
-    private void processUpdateSet(List<UpdateSet> updateSets)
+    private <S> void processUpdateSet(List<UpdateSet> updateSets, S context)
     {
         for (UpdateSet item : updateSets) {
-            ArrayList<Column> newColList = new ArrayList<>();
+            ExpressionList<Column> newColList;
+            if (item.getColumns() instanceof ParenthesedExpressionList) {
+                newColList = new ParenthesedExpressionList<>();
+            }
+            else {
+                newColList = new ExpressionList<>();
+            }
             for (Column column : item.getColumns()) {
                 if (column.getTable() == null) {
                     column.setTable(new Table("X"));
                 }//if
                 String fieldName = column.getColumnName();
                 String fullPath = column.getTable().getFullyQualifiedName();
-                EntityInfo entityInfo = findEntity(fullPath);
+                EntityInfo entityInfo = findEntity(fullPath, context);
                 EntityField entityField = entityInfo.getMetadata().getEntityField(fieldName);
                 if (entityField.getMappingType() == MappingType.EMBEDDED) {
                     throw new PersistenceException("Embedded field are not supported in update sets");
@@ -630,7 +636,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
     }//processUpdateSet
 
     @Override
-    public void visit(Update update)
+    public <S> Void visit(Update update, S context)
     {
         queryStatement = QueryStatement.UPDATE;
         if (update.getTable().getAlias() == null) {
@@ -638,78 +644,64 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             fromTable = new Table(update.getTable().getName());
             fromTable.setAlias(new Alias("X", false));
         }//if
-        update.getTable().accept(this);
-        currentPhase = Phase.SELECT;
-        processUpdateSet(update.getUpdateSets());
+
+        update.getTable().accept(this, context);
+
+        processUpdateSet(update.getUpdateSets(), context);
         for (UpdateSet updateSet : update.getUpdateSets()) {
             for (Column column : updateSet.getColumns()) {
-                column.accept(this);
+                column.accept(this, Context.SELECT);
             }//for
-            for (Expression expression : updateSet.getExpressions()) {
-                expression.accept(this);
+            for (Expression expression : updateSet.getValues()) {
+                expression.accept(this, Context.SELECT);
             }//for
         }//for
 
-        currentPhase = Phase.WHERE;
         if (update.getWhere() != null) {
-            update.getWhere().accept(this);
+            update.getWhere().accept(this, Context.WHERE);
         }//if
+
+        return null;
     }//visit
 
     @Override
-    public void visit(Delete delete)
+    public <S> Void visit(Delete delete, S context)
     {
         queryStatement = QueryStatement.DELETE;
         if (delete.getTable().getAlias() == null) {
-            delete.getTable().setAlias(new Alias(delete.getTable().getName(), false));
+            tableAlias = delete.getTable().getName();
+            delete.getTable().setAlias(new Alias(tableAlias, false));
             fromTable = new Table(delete.getTable().getName());
             fromTable.setAlias(new Alias(delete.getTable().getName(), false));
         }//if
-        delete.getTable().accept(this);
 
-        currentPhase = Phase.WHERE;
+        delete.getTable().accept(this, context);
+
         if (delete.getWhere() != null) {
-            delete.getWhere().accept(this);
+            delete.getWhere().accept(this, Context.WHERE);
         }//if
+
+        return null;
     }
 
     @Override
-    public void visit(Insert insert)
+    public <S> Void visit(Insert insert, S context)
     {
         queryStatement = QueryStatement.INSERT;
         throw new PersistenceException("INSERT queries are not valid in JPQL");
     }
 
-    private void addResultType(String column, Class<?> classType)
+    private <S> void addResultType(String column, Class<?> classType, S context)
     {
-        if (!usingSubSelect) {
+        if (context == Context.SELECT) {
             returnTypes.put(column, classType);
         }//if
     }
 
     @Override
-    public void visit(SubSelect subSelect)
-    {
-        usingSubSelect = true;
-
-        if (subSelect.getSelectBody() != null) {
-            subSelect.getSelectBody().accept(this);
-        }//if
-
-        if (subSelect.getWithItemsList() != null) {
-            for (WithItem item : subSelect.getWithItemsList()) {
-                item.accept(this);
-            }//for
-        }//if
-
-        usingSubSelect = false;
-    }
-
-    @Override
-    public void visit(PlainSelect plainSelect)
+    public <S> Void visit(PlainSelect plainSelect, S context)
     {
         queryStatement = QueryStatement.SELECT;
-        currentPhase   = Phase.FROM;
         if (plainSelect.getFromItem() instanceof Table table) {
             if (table.getAlias() == null) {
                 tableAlias = table.getName();
@@ -718,10 +710,9 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             fromTable = new Table(table.getName());
             fromTable.setAlias(new Alias(table.getAlias().getName(), false));
 
-            plainSelect.getFromItem().accept(this);
+            plainSelect.getFromItem().accept(this, Context.FROM);
         }
 
-        currentPhase = Phase.JOIN;
         if (plainSelect.getJoins() == null) {
             joins = new ArrayList<>();
             plainSelect.setJoins(joins);
@@ -731,45 +722,41 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         }//else
 
         for (Join join : joins) {
-            joinAccept(join);
+            joinAccept(join, Context.JOIN);
         }//for
 
-        currentPhase = Phase.SELECT;
         if (plainSelect.getSelectItems() != null) {
-
-            List<SelectItem> selectItemList = plainSelect.getSelectItems();
-            List<SelectItem> newList = new ArrayList<>();
+            List<SelectItem<?>> selectItemList = plainSelect.getSelectItems();
+            List<SelectItem<?>> newList = new ArrayList<>();
             plainSelect.setSelectItems(newList);
-            processSelectItems(selectItemList, newList);
-            for (SelectItem item : plainSelect.getSelectItems()) {
-                item.accept(this);
+            processSelectItems(selectItemList, newList, context == Context.STATEMENT ? Context.SELECT : Context.SUB_SELECT);
+            for (SelectItem<?> item : plainSelect.getSelectItems()) {
+                item.accept(this, context == Context.STATEMENT ? Context.SELECT : Context.SUB_SELECT);
             }//for
         }
 
-        currentPhase          = Phase.WHERE;
         selectUsingPrimaryKey = false; //Catch the case where there are no WHERE clause
         if (plainSelect.getWhere() != null) {
             //Set to true, if a tableColumn referencing a non-ID field is found it will be changed to false
             selectUsingPrimaryKey = true;
-            plainSelect.getWhere().accept(this);
+            plainSelect.getWhere().accept(this, Context.WHERE);
         }
 
-        currentPhase = Phase.HAVING;
         if (plainSelect.getHaving() != null) {
-            plainSelect.getHaving().accept(this);
+            plainSelect.getHaving().accept(this, Context.HAVING);
         }
 
-        currentPhase = Phase.GROUP_BY;
         if (plainSelect.getGroupBy() != null) {
-            plainSelect.getGroupBy().accept(this);
+            plainSelect.getGroupBy().accept(this, Context.GROUP_BY);
         }//if
 
-        currentPhase = Phase.ORDERBY;
         if (plainSelect.getOrderByElements() != null) {
             for (OrderByElement vElement : plainSelect.getOrderByElements()) {
-                vElement.accept(this);
+                vElement.accept(this, Context.ORDER_BY);
             }
         }//if
+
+        return null;
     }//visitPlainSelect
 
     private <X> void addQueryParameter(Expression expression, Class<X> parameterType)
@@ -796,7 +783,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         }//else
     }//addQueryParameter
 
-    private boolean processWhereColumn(BinaryExpression expression, Expression parameter, Column tableColumn)
+    private <S> boolean processWhereColumn(BinaryExpression expression, Expression parameter, Column tableColumn, S context)
     {
         EntityInfo entityInfo = findEntityInfoWithColAlias(tableColumn.getFullyQualifiedName());
 
@@ -828,10 +815,10 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
                     path = path.substring(0, dot);
 
                     EntityInfo foundInfo = entityInfo;
-                    entityInfo = findJoins(path, entityInfo);
+                    entityInfo = findJoins(path, entityInfo, context);
                     EntityField entityField = entityInfo.getMetadata().getEntityField(field);
                     if (entityField.isEntityField()) {
-                        entityInfo = findJoins(tableColumn.getFullyQualifiedName(), foundInfo);
+                        entityInfo = findJoins(tableColumn.getFullyQualifiedName(), foundInfo, context);
                         tableColumn.setColumnName(entityInfo.getMetadata().getIdField().getName());
                     }
                     tableColumn.getTable().setAlias(new Alias(entityInfo.getColumnAlias(), false));
@@ -842,24 +829,20 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         if (entityInfo != null && (entityInfo.getMetadata().getEntityType() == EntityType.EMBEDDABLE || entityInfo.getMetadata().getEntityType() == EntityType.ID_CLASS)) {
             addQueryParameter(parameter, entityInfo.getMetadata().getEntityClass());
 
-            List<Expression> colList = new ArrayList<>();
-            List<Expression> paramList = new ArrayList<>();
+            ExpressionList<Expression> colList = new ParenthesedExpressionList<>();
+            ExpressionList<Expression> paramList = new ParenthesedExpressionList<>();
             for (EntityField entityField : entityInfo.getMetadata().getEntityFields()) {
                 Table table = new Table();
                 table.setName(tableColumn.getTable().getFullyQualifiedName() + "." + tableColumn.getColumnName());
                 colList.add(new Column(table, entityField.getName()));
                 paramList.add(new JdbcParameter());
             }//for
-            ValueListExpression leftList = new ValueListExpression();
-            leftList.setExpressionList(new ExpressionList(colList));
-            expression.setLeftExpression(leftList);
 
-            ValueListExpression rightList = new ValueListExpression();
-            rightList.setExpressionList(new ExpressionList(paramList));
-            expression.setRightExpression(rightList);
+            expression.setLeftExpression(colList);
+            expression.setRightExpression(paramList);
 
             //Only visit the left tableColumn expression, we have already processed the parameters
-            expression.getLeftExpression().accept(this);
+            expression.getLeftExpression().accept(this, context);
 
             return false;
         }//if
@@ -868,7 +851,7 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
     }
 
     @SuppressWarnings("java:S6201") //instanceof check variable cannot be used here
-    private void visitEntity(BinaryExpression expression)
+    private <S> void visitEntity(BinaryExpression expression, S context)
     {
         Column tableColumn = null;
         Expression parameter = null;
@@ -882,34 +865,30 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             parameter   = expression.getLeftExpression();
         }//else
 
-        if (tableColumn != null && !processWhereColumn(expression, parameter, tableColumn)) {
+        if (tableColumn != null && !processWhereColumn(expression, parameter, tableColumn, context)) {
             return;
         }//if
 
-        expression.getLeftExpression().accept(this);
-        if (expression.getRightExpression() instanceof Column vCol) {
-            String s = vCol.getColumnName().toLowerCase();
-            if (s.equals("true") || s.equals("false")) {
-                expression.setRightExpression(new BooleanValue(vCol.getColumnName()));
-            }//if
-        }//if
-        expression.getRightExpression().accept(this);
+        expression.getLeftExpression().accept(this, context);
+        expression.getRightExpression().accept(this, context);
     }
 
     @Override
-    public void visit(EqualsTo pExpression)
+    public <S> Void visit(EqualsTo pExpression, S context)
     {
-        visitEntity(pExpression);
+        visitEntity(pExpression, context);
+        return null;
     }
 
     @Override
-    public void visit(NotEqualsTo pExpression)
+    public <S> Void visit(NotEqualsTo pExpression, S context)
     {
-        visitEntity(pExpression);
+        visitEntity(pExpression, context);
+        return null;
     }
 
     @Override
-    public void visit(Table tableName)
+    public <S> Void visit(Table tableName, S context)
     {
         if (tableName.getAlias() == null) {
             throw new IllegalArgumentException("Missing alias for " + tableName.getName());
@@ -937,10 +916,12 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         tableName.setAlias(new Alias(entityInfo.getTableAlias(), false));
         tableName.setName(metaData.getTable());
         tableName.setSchemaName(null);
+
+        return null;
     }//visitTable
 
     @SuppressWarnings("java:S1643") //StringBuilder cannot be used here
-    private EntityInfo findJoins(String path, EntityInfo entityInfo)
+    private <S> EntityInfo findJoins(String path, EntityInfo entityInfo, S context)
     {
         String[] pathElements = path.split("\\.");
         String pathElement = pathElements[0];
@@ -951,14 +932,14 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             }//if
 
             pathElement = pathElement + "." + field.getName();
-            entityInfo  = findEntity(pathElement);
+            entityInfo  = findEntity(pathElement, context);
         }//for
 
         return entityInfo;
     }//findJoins
 
     @Override
-    public void visit(Column tableColumn)
+    public <S> Void visit(Column tableColumn, S context)
     {
         /*
          * A Column can either be point to an entity in which case we need to use the primary key field or to the actual field
@@ -968,38 +949,27 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
             if (tableColumn.getTable() == null) {
                 tableColumn.setTable(fromTable);
             }//if
-            String colPath = tableColumn.getName(true);
-            int dot = colPath.lastIndexOf('.');
-            if (dot == -1) {
-                throw new IllegalArgumentException("Missing alias on column '" + tableColumn + "'");
+
+            if (tableColumn.getTable().getAlias() == null) {
+                entityInfo = findEntityInfoWithColAlias(tableColumn.getTable().getFullyQualifiedName());
+            }
+            else {
+                entityInfo = findEntityInfoWithColAlias(tableColumn.getTable().getAlias().getName());
+            }
+            if (entityInfo == null && this.tableAlias != null) {
+                Table table = tableColumn.getTable();
+                table.setSchemaName(tableAlias);
+                entityInfo = findEntity(table.getFullyQualifiedName(), context);
             }//if
-            colPath = colPath.substring(0, dot);
 
-            entityInfo = findEntityInfoWithColAlias(colPath);
             if (entityInfo == null) {
-                if (this.tableAlias != null) {
-                    String[] fullName = tableColumn.getFullyQualifiedName().split("\\.");
-                    List<String> parts = new ArrayList<>();
-                    parts.add(tableAlias);
-                    parts.addAll(List.of(fullName));
-                    tableColumn.setTable(new Table(parts.subList(0, parts.size() - 1)));
-                    tableColumn.setColumnName(parts.getLast());
-                    colPath = tableColumn.getName(true);
-                    dot     = colPath.lastIndexOf('.');
-                    colPath = colPath.substring(0, dot);
-
-                    entityInfo = findEntity(colPath);
-                }//if
-
-                if (entityInfo == null) {
-                    throw new IllegalArgumentException("Missing entity alias prefix on column '" + tableColumn + "'");
-                }//if
+                throw new IllegalArgumentException("Missing entity alias prefix on column '" + tableColumn + "'");
             }//if
 
             EntityField field = entityInfo.getMetadata().getEntityField(tableColumn.getColumnName());
             tableColumn.setColumnName(field.getColumn());
             tableColumn.setTable(new Table(entityInfo.getTableAlias()));
-            if (currentPhase == Phase.WHERE && (!entityInfo.getTableAlias().equals("t1") || !field.isIdField())) {
+            if (context == Context.WHERE && (!entityInfo.getTableAlias().equals("t1") || !field.isIdField())) {
                 selectUsingPrimaryKey = false;
             }
         }//if
@@ -1010,37 +980,35 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
 
             tableColumn.setTable(new Table(entityInfo.getTableAlias()));
             tableColumn.setColumnName(entityInfo.getMetadata().getIdField().getColumn());
-            if (currentPhase == Phase.WHERE && !entityInfo.getTableAlias().equals("t1")) {
+            if (context == Context.WHERE && !entityInfo.getTableAlias().equals("t1")) {
                 selectUsingPrimaryKey = false;
             }//if
         }//else
+
+        return null;
     }//visitColumn
 
     @Override
-    public void visit(SelectExpressionItem selectExpressionItem)
-    {
-        selectExpressionItem.getExpression().accept(this);
-    }//visitSelectExpressionItem
-
-    @Override
-    public void visit(Function function)
+    public <S> Void visit(Function function, S context)
     {
         if (function.getParameters() != null) {
-            for (Expression item : function.getParameters().getExpressions()) {
+            for (Expression item : function.getParameters()) {
                 /*
                  * Only add a return type if the function was used in the select
                  */
-                if (currentPhase == Phase.SELECT) {
-                    addResultType("c" + (returnTypes.size() + 1), Object.class);
+                if (context == Context.SELECT) {
+                    addResultType("c" + (returnTypes.size() + 1), Object.class, context);
                 }//if
 
-                item.accept(this);
+                item.accept(this, context);
             }//for
         }//if
+
+        return null;
     }
 
     @Override
-    public void visit(JdbcParameter jdbcParameter)
+    public <S> Void visit(JdbcParameter jdbcParameter, S context)
     {
         addQueryParameter(jdbcParameter, Object.class);
 
@@ -1050,13 +1018,15 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         /*
          * Only add a return type if the parameter was used in the select
          */
-        if (currentPhase == Phase.SELECT) {
-            addResultType("c" + (returnTypes.size() + 1), Object.class);
+        if (context == Context.SELECT) {
+            addResultType("c" + (returnTypes.size() + 1), Object.class, context);
         }//if
+
+        return null;
     }//visitJdbcParameter
 
     @Override
-    public void visit(JdbcNamedParameter jdbcNamedParameter)
+    public <S> Void visit(JdbcNamedParameter jdbcNamedParameter, S context)
     {
         addQueryParameter(jdbcNamedParameter, Object.class);
         jdbcNamedParameter.setName("?");
@@ -1064,8 +1034,10 @@ public class JPQLParser extends JsqlVistorBase implements QueryParser
         /*
          * Only add a return type if the parameter was used in the select
          */
-        if (currentPhase == Phase.SELECT) {
-            addResultType("c" + (returnTypes.size() + 1), Object.class);
+        if (context == Context.SELECT) {
+            addResultType("c" + (returnTypes.size() + 1), Object.class, context);
         }//if
+
+        return null;
     }//visitJdbcNamedParameter
 }

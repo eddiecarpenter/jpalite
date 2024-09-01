@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package org.jpalite.repository;
+package org.jpalite.impl.parsers;
 
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
@@ -58,8 +58,8 @@ import org.jpalite.JpqlSyntaxException;
 import java.util.List;
 import java.util.Map;
 
-class ParserBase implements SelectVisitor<Void>, FromItemVisitor<Void>, ExpressionVisitor<Void>,
-                            SelectItemVisitor<Void>, StatementVisitor<Void>, GroupByVisitor<Void>, OrderByVisitor<Void>
+public class JPQLAdaptor implements SelectVisitor<Void>, FromItemVisitor<Void>, ExpressionVisitor<Void>,
+                                    SelectItemVisitor<Void>, StatementVisitor<Void>, GroupByVisitor<Void>, OrderByVisitor<Void>
 {
     @Override
     public <S> Void visit(Select select, S context)

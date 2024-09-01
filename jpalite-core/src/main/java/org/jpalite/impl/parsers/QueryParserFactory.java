@@ -17,10 +17,10 @@
 
 package org.jpalite.impl.parsers;
 
-import org.jpalite.parsers.QueryParser;
-import org.jpalite.queries.QueryLanguage;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.PersistenceException;
+import org.jpalite.parsers.QueryParser;
+import org.jpalite.queries.QueryLanguage;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,41 +30,41 @@ import static org.jpalite.JPALiteEntityManager.PERSISTENCE_OVERRIDE_FETCHTYPE;
 
 public class QueryParserFactory
 {
-	private static final Map<String, QueryParser> PARSED_QUERIES = new ConcurrentHashMap<>();
+    private static final Map<String, QueryParser> PARSED_QUERIES = new ConcurrentHashMap<>();
 
-	private QueryParserFactory()
-	{
-	}
+    private QueryParserFactory()
+    {
+    }
 
-	/**
-	 * Factory for query parsers used in JPA Lite
-	 *
-	 * @param rawQuery   The JQPL query
-	 * @param queryHints The query hints
-	 */
-	public static QueryParser getParser(QueryLanguage language, String rawQuery, Map<String, Object> queryHints)
-	{
-		/*
-		 * If we override the fetching definition on the entity, we need to reparse the query.
-		 */
-		FetchType overrideFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_FETCHTYPE);
-		FetchType overrideBasicFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE);
-		String cacheKey = rawQuery +
-				language +
-				((overrideFetch == null) ? "NONE" : overrideFetch) +
-				((overrideBasicFetch == null) ? "NONE" : overrideBasicFetch);
+    /**
+     * Factory for query parsers used in JPA Lite
+     *
+     * @param rawQuery   The JQPL query
+     * @param queryHints The query hints
+     */
+    public static QueryParser getParser(QueryLanguage language, String rawQuery, Map<String, Object> queryHints)
+    {
+        /*
+         * If we override the fetching definition on the entity, we need to reparse the query.
+         */
+        FetchType overrideFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_FETCHTYPE);
+        FetchType overrideBasicFetch = (FetchType) queryHints.get(PERSISTENCE_OVERRIDE_BASIC_FETCHTYPE);
+        String cacheKey = rawQuery +
+                          language +
+                          ((overrideFetch == null) ? "NONE" : overrideFetch) +
+                          ((overrideBasicFetch == null) ? "NONE" : overrideBasicFetch);
 
-		QueryParser parser = PARSED_QUERIES.get(cacheKey);
-		if (parser == null) {
-			parser = switch (language) {
-				case NATIVE -> new SQLParser(rawQuery, queryHints);
-				case JPQL -> new JPQLParser(rawQuery, queryHints);
-				default -> throw new PersistenceException("Not supported");
-			};
+        QueryParser parser = PARSED_QUERIES.get(cacheKey);
+        if (parser == null) {
+            parser = switch (language) {
+                case NATIVE -> new SQLParser(rawQuery, queryHints);
+                case JPQL -> new JPQLParser(rawQuery, queryHints);
+                default -> throw new PersistenceException("Not supported");
+            };
 
-			PARSED_QUERIES.put(cacheKey, parser);
-		}//if
+            PARSED_QUERIES.put(cacheKey, parser);
+        }//if
 
-		return parser;
-	}//getParser
+        return parser;
+    }//getParser
 }

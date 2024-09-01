@@ -22,7 +22,6 @@ import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
 import net.sf.jsqlparser.expression.operators.arithmetic.Subtraction;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -62,117 +61,122 @@ class FilterParser extends ParserBase
     }
 
     @Override
-    public void visit(PlainSelect plainSelect)
+    public <S> Void visit(PlainSelect plainSelect, S context)
     {
         if (plainSelect.getWhere() != null) {
-            plainSelect.getWhere().accept(this);
+            plainSelect.getWhere().accept(this, context);
         }
+
+        return null;
     }
 
     @Override
-    public void visit(Addition addition)
+    public <S> Void visit(Addition addition, S context)
     {
-        addition.getLeftExpression().accept(this);
+        addition.getLeftExpression().accept(this, context);
         operationType = addition.getStringExpression();
-        addition.getRightExpression().accept(this);
+        addition.getRightExpression().accept(this, context);
+
+        return null;
     }
 
     @Override
-    public void visit(Subtraction subtraction)
+    public <S> Void visit(Subtraction subtraction, S context)
     {
-        subtraction.getLeftExpression().accept(this);
+        subtraction.getLeftExpression().accept(this, context);
         operationType = subtraction.getStringExpression();
-        subtraction.getRightExpression().accept(this);
+        subtraction.getRightExpression().accept(this, context);
+
+        return null;
     }
 
     @Override
-    public void visit(JdbcParameter jdbcParameter)
+    public <S> Void visit(JdbcParameter jdbcParameter, S context)
     {
         params.add(parameters[paramNr++]);
+        return null;
     }
 
     @Override
-    public void visit(JdbcNamedParameter jdbcNamedParameter)
+    public <S> Void visit(JdbcNamedParameter jdbcNamedParameter, S context)
     {
         params.add(parameters[paramNr++]);
+        return null;
     }
 
 
     @Override
-    public void visit(DoubleValue pValue)
+    public <S> Void visit(DoubleValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(LongValue pValue)
+    public <S> Void visit(LongValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(HexValue pValue)
+    public <S> Void visit(HexValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(DateValue pValue)
+    public <S> Void visit(DateValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(TimeValue pValue)
+    public <S> Void visit(TimeValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(TimestampValue pValue)
+    public <S> Void visit(TimestampValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(StringValue pValue)
+    public <S> Void visit(StringValue pValue, S context)
     {
         params.add(pValue.getValue());
+        return null;
     }
 
     @Override
-    public void visit(Column tableColumn)
+    public <S> Void visit(Column tableColumn, S context)
     {
         col = tableColumn.getFullyQualifiedName();
+        return null;
     }
 
     @Override
-    public void visit(Parenthesis parenthesis)
-    {
-        parenthesis.getExpression().accept(this);
-    }
-
-    @Override
-    public void visit(AndExpression andExpression)
-    {
-        andExpression.getLeftExpression().accept(this);
-        andExpression.getRightExpression().accept(this);
-    }
-
-    @Override
-    public void visit(OrExpression orExpression)
+    public <S> Void visit(OrExpression orExpression, S context)
     {
         boolean vRoot = (currentFilter.isUnfiltered() && currentFilter == filter);
 
-        orExpression.getLeftExpression().accept(this);
+        orExpression.getLeftExpression().accept(this, context);
         Filter newFilter = currentFilter;
         currentFilter = Filter.noFilter();
-        orExpression.getRightExpression().accept(this);
+        orExpression.getRightExpression().accept(this, context);
 
         currentFilter = Filter.of(newFilter).orWhere(currentFilter);
         if (vRoot) {
             this.filter = currentFilter;
         }//if
+
+        return null;
     }
 
     private void addFilter(Operators pOperators)
@@ -197,99 +201,112 @@ class FilterParser extends ParserBase
     }
 
     @Override
-    public void visit(Between between)
+    public <S> Void visit(Between between, S context)
     {
-        between.getLeftExpression().accept(this);
-        between.getBetweenExpressionStart().accept(this);
-        between.getBetweenExpressionEnd().accept(this);
+        between.getLeftExpression().accept(this, context);
+        between.getBetweenExpressionStart().accept(this, context);
+        between.getBetweenExpressionEnd().accept(this, context);
         addFilter(Operators.BETWEEN);
+        return null;
     }
 
     @Override
-    public void visit(EqualsTo equalsTo)
+    public <S> Void visit(EqualsTo equalsTo, S context)
     {
-        equalsTo.getLeftExpression().accept(this);
-        equalsTo.getRightExpression().accept(this);
+        equalsTo.getLeftExpression().accept(this, context);
+        equalsTo.getRightExpression().accept(this, context);
         addFilter(Operators.EQUALS);
+        return null;
     }
 
     @Override
-    public void visit(GreaterThan greaterThan)
+    public <S> Void visit(GreaterThan greaterThan, S context)
     {
-        greaterThan.getLeftExpression().accept(this);
-        greaterThan.getRightExpression().accept(this);
+        greaterThan.getLeftExpression().accept(this, context);
+        greaterThan.getRightExpression().accept(this, context);
         addFilter(Operators.BIGGER_THAN);
+        return null;
     }
 
     @Override
-    public void visit(GreaterThanEquals greaterThanEquals)
+    public <S> Void visit(GreaterThanEquals greaterThanEquals, S context)
     {
-        greaterThanEquals.getLeftExpression().accept(this);
-        greaterThanEquals.getRightExpression().accept(this);
+        greaterThanEquals.getLeftExpression().accept(this, context);
+        greaterThanEquals.getRightExpression().accept(this, context);
         addFilter(Operators.BIGGER_OR_EQUAL);
+        return null;
     }
 
     @Override
-    public void visit(InExpression inExpression)
+    public <S> Void visit(InExpression inExpression, S context)
     {
         if (inExpression.getLeftExpression() != null) {
-            inExpression.getLeftExpression().accept(this);
+            inExpression.getLeftExpression().accept(this, context);
         }//if
 
-        if (inExpression.getRightItemsList() != null) {
-            inExpression.getRightItemsList().accept(this);
+        if (inExpression.getRightExpression() != null) {
+            inExpression.getRightExpression().accept(this, context);
         }//if
 
         addFilter(inExpression.isNot() ? Operators.NOTIN : Operators.IN);
+
+        return null;
     }
 
 
     @Override
-    public void visit(IsNullExpression isNullExpression)
+    public <S> Void visit(IsNullExpression isNullExpression, S context)
     {
-        isNullExpression.getLeftExpression().accept(this);
+        isNullExpression.getLeftExpression().accept(this, context);
         addFilter(isNullExpression.isNot() ? Operators.ISNOTNULL : Operators.ISNULL);
+        return null;
     }
 
     @Override
-    public void visit(LikeExpression likeExpression)
+    public <S> Void visit(LikeExpression likeExpression, S context)
     {
-        likeExpression.getLeftExpression().accept(this);
-        likeExpression.getRightExpression().accept(this);
+        likeExpression.getLeftExpression().accept(this, context);
+        likeExpression.getRightExpression().accept(this, context);
         addFilter(likeExpression.isNot() ? Operators.CONTAINS_NOT : Operators.CONTAINS);
+        return null;
     }
 
     @Override
-    public void visit(MinorThan minorThan)
+    public <S> Void visit(MinorThan minorThan, S context)
     {
-        minorThan.getLeftExpression().accept(this);
-        minorThan.getRightExpression().accept(this);
+        minorThan.getLeftExpression().accept(this, context);
+        minorThan.getRightExpression().accept(this, context);
         addFilter(Operators.SMALLER_THAN);
+        return null;
     }
 
     @Override
-    public void visit(MinorThanEquals minorThanEquals)
+    public <S> Void visit(MinorThanEquals minorThanEquals, S context)
     {
-        minorThanEquals.getLeftExpression().accept(this);
-        minorThanEquals.getRightExpression().accept(this);
+        minorThanEquals.getLeftExpression().accept(this, context);
+        minorThanEquals.getRightExpression().accept(this, context);
         addFilter(Operators.SMALLER_OR_EQUAL);
+        return null;
     }
 
     @Override
-    public void visit(NotEqualsTo notEqualsTo)
+    public <S> Void visit(NotEqualsTo notEqualsTo, S context)
     {
-        notEqualsTo.getLeftExpression().accept(this);
-        notEqualsTo.getRightExpression().accept(this);
+        notEqualsTo.getLeftExpression().accept(this, context);
+        notEqualsTo.getRightExpression().accept(this, context);
         addFilter(Operators.NOTEQUALS);
+        return null;
     }
 
     @Override
-    public void visit(IntervalExpression intervalExpression)
+    public <S> Void visit(IntervalExpression intervalExpression, S context)
     {
         if (operationType != null) {
             params.add(intervalExpression.getParameter());
             addFilter(operationType.equals("+") ? Operators.PLUS_INTERVAL : Operators.MINUS_INTERVAL);
             operationType = null;
         }//if
+
+        return null;
     }
 }

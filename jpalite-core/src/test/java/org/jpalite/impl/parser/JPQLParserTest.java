@@ -15,7 +15,7 @@
  *  limitations under the License.
  */
 
-package org.jpalite.jqpl;
+package org.jpalite.impl.parser;
 
 import jakarta.persistence.FetchType;
 import net.sf.jsqlparser.JSQLParserException;

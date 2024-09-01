@@ -15,40 +15,34 @@
  *  limitations under the License.
  */
 
-package org.jpalite.impl.parsers;
+package org.jpalite;
 
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.ExpressionVisitor;
-import net.sf.jsqlparser.parser.ASTNodeAccessImpl;
+import jakarta.persistence.PersistenceException;
 
-public class BooleanValue extends ASTNodeAccessImpl implements Expression
+/**
+ * Exception thrown when there is a syntax error in a JPQL (Java Persistence Query Language) query.
+ * This exception extends from {@code PersistenceException} and provides multiple constructors
+ * for different initialization scenarios.
+ */
+public class JpqlSyntaxException extends PersistenceException
 {
-	private final String stringValue;
+    public JpqlSyntaxException()
+    {
+        super();
+    }
 
-	public BooleanValue(String value)
-	{
-		stringValue = value.toLowerCase();
-	}
+    public JpqlSyntaxException(String message)
+    {
+        super(message);
+    }
 
-	public BooleanValue(boolean value)
-	{
-		stringValue = String.valueOf(value);
-	}
+    public JpqlSyntaxException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 
-	@Override
-	public void accept(ExpressionVisitor expressionVisitor)
-	{
-		((ExtraExpressionVisitor) expressionVisitor).visit(this);
-	}
-
-	public String getStringValue()
-	{
-		return stringValue;
-	}
-
-	@Override
-	public String toString()
-	{
-		return getStringValue();
-	}
+    public JpqlSyntaxException(Throwable cause)
+    {
+        super(cause);
+    }
 }

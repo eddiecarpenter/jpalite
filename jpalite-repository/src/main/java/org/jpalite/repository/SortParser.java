@@ -24,73 +24,76 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.OrderByElement;
-import net.sf.jsqlparser.statement.select.OrderByVisitor;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 
-class SortParser extends ParserBase implements OrderByVisitor
+class SortParser extends ParserBase
 {
-	private Sort sort = Sort.unsorted();
-	private int limit = Integer.MAX_VALUE;
-	private int offset = 0;
+    private Sort sort = Sort.unsorted();
+    private int limit = Integer.MAX_VALUE;
+    private int offset = 0;
 
-	public SortParser(String expression)
-	{
-		try {
-			Statement statement = CCJSqlParserUtil.parse("select * from T " + expression);
-			statement.accept(this);
-		}//try
-		catch (JSQLParserException ex) {
-			throw new PersistenceException("Error parsing query", ex);
-		}//catch
-	}
+    public SortParser(String expression)
+    {
+        try {
+            Statement statement = CCJSqlParserUtil.parse("select * from T " + expression);
+            statement.accept(this);
+        }//try
+        catch (JSQLParserException ex) {
+            throw new PersistenceException("Error parsing query", ex);
+        }//catch
+    }
 
-	public Sort getSort()
-	{
-		return sort;
-	}
+    public Sort getSort()
+    {
+        return sort;
+    }
 
-	public int getLimit()
-	{
-		return limit;
-	}
+    public int getLimit()
+    {
+        return limit;
+    }
 
-	public int getOffset()
-	{
-		return offset;
-	}
+    public int getOffset()
+    {
+        return offset;
+    }
 
-	@Override
-	public void visit(OrderByElement orderBy)
-	{
-		if (orderBy.getExpression() instanceof Column vColumn) {
-			orderBy.getExpression().accept(this);
+    @Override
+    public <S> Void visit(OrderByElement orderBy, S context)
+    {
+        if (orderBy.getExpression() instanceof Column vColumn) {
+            orderBy.getExpression().accept(this, context);
 
-			Direction direction = Direction.NATURAL;
-			if (orderBy.isAscDescPresent()) {
-				direction = orderBy.isAsc() ? Direction.ASC : Direction.DESC;
-			}//if
-			NullHandling handling = NullHandling.NATIVE;
-			if (orderBy.getNullOrdering() != null) {
-				handling = (orderBy.getNullOrdering() == OrderByElement.NullOrdering.NULLS_FIRST) ? NullHandling.FIRST : NullHandling.LAST;
-			}//if
+            Direction direction = Direction.NATURAL;
+            if (orderBy.isAscDescPresent()) {
+                direction = orderBy.isAsc() ? Direction.ASC : Direction.DESC;
+            }//if
+            NullHandling handling = NullHandling.NATIVE;
+            if (orderBy.getNullOrdering() != null) {
+                handling = (orderBy.getNullOrdering() == OrderByElement.NullOrdering.NULLS_FIRST) ? NullHandling.FIRST : NullHandling.LAST;
+            }//if
 
-			sort = sort.and(Sort.by(new SortOrder(direction, vColumn.getColumnName(), handling)));
-		}//if
-	}
+            sort = sort.and(Sort.by(new SortOrder(direction, vColumn.getColumnName(), handling)));
+        }//if
 
-	@Override
-	public void visit(PlainSelect plainSelect)
-	{
-		if (plainSelect.getOrderByElements() != null) {
-			plainSelect.getOrderByElements().forEach(o -> o.accept(this));
-		}//if
+        return null;
+    }
 
-		if (plainSelect.getLimit() != null && plainSelect.getLimit().getRowCount() instanceof LongValue aLimit) {
-			this.limit = (int) aLimit.getValue();
-		}//if
+    @Override
+    public <S> Void visit(PlainSelect plainSelect, S context)
+    {
+        if (plainSelect.getOrderByElements() != null) {
+            plainSelect.getOrderByElements().forEach(o -> o.accept(this, context));
+        }//if
 
-		if (plainSelect.getOffset() != null && plainSelect.getOffset().getOffset() instanceof LongValue aOffset) {
-			this.offset = (int) aOffset.getValue();
-		}//if
-	}
+        if (plainSelect.getLimit() != null && plainSelect.getLimit().getRowCount() instanceof LongValue aLimit) {
+            this.limit = (int) aLimit.getValue();
+        }//if
+
+        if (plainSelect.getOffset() != null && plainSelect.getOffset().getOffset() instanceof LongValue aOffset) {
+            this.offset = (int) aOffset.getValue();
+        }//if
+
+        return null;
+    }
 }
