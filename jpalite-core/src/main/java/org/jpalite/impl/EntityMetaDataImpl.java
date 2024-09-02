@@ -43,7 +43,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
     private TimeUnit cacheTimeUnit = TimeUnit.DAYS;
 
     private final String columns;
-    private String table;
+    private final String table;
     private EntityType entityType;
 
     private EntityMetaData<?> primaryKey;
@@ -75,6 +75,9 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
         if (tableAnnotation != null) {
             this.table = tableAnnotation.name();
         }//if
+        else {
+            this.table = entityName;
+        }//else
 
         Embeddable embeddable = entityClass.getAnnotation(Embeddable.class);
         if (embeddable != null) {
