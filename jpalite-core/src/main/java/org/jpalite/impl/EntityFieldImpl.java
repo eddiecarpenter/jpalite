@@ -155,6 +155,7 @@ public class EntityFieldImpl implements EntityField
 
         enityClass       = enitityClass;
         name             = field.getName();
+        column           = field.getName();
         this.fieldNr     = fieldNr;
         entityField      = (JPAEntity.class.isAssignableFrom(type));
         mappingType      = MappingType.BASIC;
@@ -390,7 +391,8 @@ public class EntityFieldImpl implements EntityField
 
                     converter = (enumField.value() == EnumType.ORDINAL ? new OrdinalEnumFieldType((Class<Enum<?>>) type) : new EnumFieldType((Class<Enum<?>>) type));
                 }//if
-            } else {
+            }
+            else {
                 if (!isEntityField()) {
                     converter = new ObjectFieldType();
                 }
