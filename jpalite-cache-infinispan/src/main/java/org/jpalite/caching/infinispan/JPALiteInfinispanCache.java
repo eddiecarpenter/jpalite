@@ -33,7 +33,10 @@ public class JPALiteInfinispanCache implements JPACache
         this.regionPrefix    = (regionPrefix == null || "<default>".equals(regionPrefix)) ? "" : regionPrefix + " - ";
         this.cacheClientName = cacheClientName;
         this.configuration   = configuration;
-        LOG.info("Loading '{}' as JPALite caching provider with region prefix ['{}']", JPALiteInfinispanCache.class.getCanonicalName(), regionPrefix);
+        LOG.info("Loading '{}' as JPALite caching provider for Infinispan client ['{}'] with region prefix ['{}']",
+                 JPALiteInfinispanCache.class.getCanonicalName(),
+                 cacheClientName,
+                 regionPrefix);
     }
 
     private <T> RemoteCache<String, T> getCache(String cacheRegion)
