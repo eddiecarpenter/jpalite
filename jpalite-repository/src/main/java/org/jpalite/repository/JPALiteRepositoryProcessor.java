@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -237,14 +239,19 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
             out.println(") {");
             out.println("  EntityManager em = getEntityManager();");
             boolean returnCollection = false;
+
+            Query query = queries[0];
+            boolean catchNoResult = query.catchNoResult();
+            boolean usingOptional = false;
             String returnType = method.getReturnType().toString();
             if (method.getReturnType() instanceof DeclaredType declaredType && !declaredType.getTypeArguments().isEmpty()) {
-                returnCollection = true;
+                returnCollection = declaredType.asElement().toString().equals(List.class.getCanonicalName());
                 returnType       = declaredType.getTypeArguments().getFirst().toString();
+                usingOptional    = declaredType.asElement().toString().equals(Optional.class.getCanonicalName());
+                catchNoResult    = catchNoResult || usingOptional;
             }//if
 
             StringBuilder pageAndSort = new StringBuilder();
-            Query query = queries[0];
             if (query.namedQuery()) {
                 out.print("TypedQuery<");
                 out.print(returnType);
@@ -344,10 +351,14 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
             else {
                 out.println(pageAndSort);
 
-                if (!returnCollection && query.catchNoResult()) {
+                if (!returnCollection && catchNoResult) {
                     out.println("try {");
                 }//if
                 out.print("  return ");
+
+                if (usingOptional) {
+                    out.print("Optional.of(");
+                }
                 if (query.nativeQuery()) {
                     out.print("(");
                     out.print(returnType);
@@ -355,16 +366,25 @@ public class JPALiteRepositoryProcessor extends AbstractProcessor
                 }//if
                 out.print("  query.");
                 if (returnCollection) {
-                    out.println("getResultList();");
+                    out.print("getResultList()");
                 }//if
                 else {
-                    out.println("getSingleResult();");
+                    out.print("getSingleResult()");
                 }//else
+                if (usingOptional) {
+                    out.print(")");
+                }
+                out.println(";");
 
-                if (!returnCollection && query.catchNoResult()) {
+                if (!returnCollection && catchNoResult) {
                     out.println("}");
                     out.println("catch (NoResultException ex) {");
-                    out.println("  return null;");
+                    if (usingOptional) {
+                        out.println("  return Optional.empty();");
+                    }
+                    else {
+                        out.println("  return null;");
+                    }
                     out.println("}");
                 }//if
             }//else
