@@ -166,8 +166,8 @@ public class EntityFieldImpl implements EntityField
         fetchType        = FetchType.EAGER;
         cascade          = new HashSet<>();
         mappedBy         = null;
-        columnDefinition = null;
-        table            = null;
+        columnDefinition = "";
+        table            = "";
         idField          = false;
         versionField     = false;
 
