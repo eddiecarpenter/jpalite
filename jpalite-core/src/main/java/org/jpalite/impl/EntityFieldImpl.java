@@ -146,7 +146,7 @@ public class EntityFieldImpl implements EntityField
      * @param field   The field
      * @param fieldNr The field number
      */
-    public EntityFieldImpl(Class<?> enitityClass, Field field, int fieldNr)
+    public EntityFieldImpl(EntityMetaDataImpl<?> entityMetaData, Class<?> enitityClass, Field field, int fieldNr)
     {
         type = field.getType();
         if (!Map.class.isAssignableFrom(type) && field.getGenericType() instanceof ParameterizedType) {
@@ -155,7 +155,7 @@ public class EntityFieldImpl implements EntityField
 
         enityClass       = enitityClass;
         name             = field.getName();
-        column           = field.getName();
+        column           = entityMetaData.isLegacyEntity() ? null : field.getName();
         this.fieldNr     = fieldNr;
         entityField      = (JPAEntity.class.isAssignableFrom(type));
         mappingType      = MappingType.BASIC;

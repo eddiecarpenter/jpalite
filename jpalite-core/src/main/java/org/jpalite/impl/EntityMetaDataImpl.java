@@ -143,7 +143,7 @@ public class EntityMetaDataImpl<T> implements EntityMetaData<T>
 
     private void processEntityField(Field field, StringBuilder stringBuilder)
     {
-        EntityField entityField = new EntityFieldImpl(entityClass, field, entityFields.size() + 1);
+        EntityField entityField = new EntityFieldImpl(this, entityClass, field, entityFields.size() + 1);
 
         if (entityField.getMappingType() == MappingType.BASIC) {
             if (entityField.getColumn() == null) {
