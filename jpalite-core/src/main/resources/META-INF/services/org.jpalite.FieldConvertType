@@ -10,4 +10,5 @@ org.jpalite.impl.fieldtypes.StringFieldType
 org.jpalite.impl.fieldtypes.BytesFieldType
 org.jpalite.impl.fieldtypes.TimestampFieldType
 org.jpalite.impl.fieldtypes.LocalDateTimeFieldType
+org.jpalite.impl.fieldtypes.DateFieldType
 org.jpalite.impl.fieldtypes.BigDecimalFieldType
