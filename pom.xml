@@ -61,7 +61,7 @@
         <version.release.plugin>3.1.1</version.release.plugin>
 
         <!--Test dependencies-->
-        <junit-jupiter.version>5.11.0</junit-jupiter.version>
+        <junit-jupiter.version>5.11.1</junit-jupiter.version>
     </properties>
 
     <modules>
