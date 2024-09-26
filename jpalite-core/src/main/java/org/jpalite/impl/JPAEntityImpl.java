@@ -589,9 +589,9 @@ public class JPAEntityImpl implements JPAEntity
             $$metadata.getEntityFields().stream()
                       .filter(f -> f.isEntityField() && !_isLazyLoaded(f.getName()) && f.getMappingType() != MappingType.ONE_TO_MANY)
                       .forEach(f -> {
-                          JPAEntity vEntity = (JPAEntity) f.invokeGetter(this);
-                          if (vEntity != null) {
-                              vEntity._setEntityState(newState);
+                          JPAEntity entity = (JPAEntity) f.invokeGetter(this);
+                          if (entity != null && !entity._isLazyLoaded()) {
+                              entity._setEntityState(newState);
                           }//if
                       });
         }//if
