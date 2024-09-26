@@ -326,7 +326,8 @@ public class JPAEntityImpl implements JPAEntity
                         if (entity != null) {
                             entity._refreshEntity(properties);
                         }
-                    } else {
+                    }
+                    else {
                         if (field.getMappingType() == MappingType.ONE_TO_MANY || field.getMappingType() == MappingType.MANY_TO_MANY) {
                             @SuppressWarnings("unchecked")
                             List<JPAEntity> entities = (List<JPAEntity>) field.invokeGetter(this);
@@ -586,7 +587,7 @@ public class JPAEntityImpl implements JPAEntity
     {
         if ($$state != newState && newState != EntityState.REMOVED) {
             $$metadata.getEntityFields().stream()
-                      .filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
+                      .filter(f -> f.isEntityField() && !_isLazyLoaded(f.getName()) && f.getMappingType() != MappingType.ONE_TO_MANY)
                       .forEach(f -> {
                           JPAEntity vEntity = (JPAEntity) f.invokeGetter(this);
                           if (vEntity != null) {
@@ -792,7 +793,8 @@ public class JPAEntityImpl implements JPAEntity
                 if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
                     field.invokeSetter(this, _JPAReadEntity(field, row, colPrefix, columnNr));
                 }//if
-            } else {
+            }
+            else {
                 field.invokeSetter(this, field.getConverter().convertToEntityAttribute(row, columnNr));
             }
         }//try
@@ -869,7 +871,8 @@ public class JPAEntityImpl implements JPAEntity
                             out.writeShort(0); //End of entity
                         }//else
                     }//else
-                } else {
+                }
+                else {
                     field.getConverter().writeField(value, out);
                 }//else
             }//if
@@ -893,7 +896,8 @@ public class JPAEntityImpl implements JPAEntity
                     entity._markLazyLoaded();
                 }
                 field.invokeSetter(this, entity);
-            } else {
+            }
+            else {
                 field.invokeSetter(this, field.getConverter().readField(in));
             }
 
@@ -918,7 +922,8 @@ public class JPAEntityImpl implements JPAEntity
                         jsonGenerator.writeFieldName(field.getName());
                         if (value == null) {
                             jsonGenerator.writeNull();
-                        } else {
+                        }
+                        else {
 
                             EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
                             if (metaData.getEntityType() == EntityType.EMBEDDABLE) {
@@ -945,7 +950,8 @@ public class JPAEntityImpl implements JPAEntity
                     jsonGenerator.writeFieldName(field.getName());
                     if (value == null) {
                         jsonGenerator.writeNull();
-                    } else {
+                    }
+                    else {
                         field.getConverter().toJson(jsonGenerator, value);
                     }
                 }//else
@@ -984,7 +990,8 @@ public class JPAEntityImpl implements JPAEntity
             EntityField field = $$metadata.getEntityField(node.getKey());
             if (node.getValue().isNull()) {
                 field.invokeSetter(this, null);
-            } else {
+            }
+            else {
                 if (field.isEntityField()) {
                     EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
 
@@ -995,7 +1002,8 @@ public class JPAEntityImpl implements JPAEntity
                         entity._markLazyLoaded();
                     }
                     field.invokeSetter(this, entity);
-                } else {
+                }
+                else {
                     field.invokeSetter(this, field.getConverter().fromJson(node.getValue()));
                 }
             }//else
