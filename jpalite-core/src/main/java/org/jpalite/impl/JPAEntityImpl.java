@@ -399,7 +399,9 @@ public class JPAEntityImpl implements JPAEntity
             return;
         }//if
 
-        if (_isLazyLoaded()) {
+        EntityField entityField = $$metadata.getEntityField(fieldName);
+
+        if (!entityField.isIdField() && _isLazyLoaded()) {
             //Refresh the entity. Refreshing will also clear the lazy loaded flag
             _refreshEntity(Collections.emptyMap());
         }//if
@@ -408,8 +410,7 @@ public class JPAEntityImpl implements JPAEntity
             if (_getPersistenceContext().isReleased()) {
                 throw new LazyInitializationException("Entity is not attached to an active persistence context");
             }//if
-
-            EntityField entityField = $$metadata.getEntityField(fieldName);
+            
             if (entityField.getMappingType() == MappingType.BASIC) {
                 _queryBasicField(entityField);
             }//if
