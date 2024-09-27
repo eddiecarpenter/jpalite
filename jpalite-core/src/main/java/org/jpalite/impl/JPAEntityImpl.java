@@ -410,7 +410,7 @@ public class JPAEntityImpl implements JPAEntity
             if (_getPersistenceContext().isReleased()) {
                 throw new LazyInitializationException("Entity is not attached to an active persistence context");
             }//if
-            
+
             if (entityField.getMappingType() == MappingType.BASIC) {
                 _queryBasicField(entityField);
             }//if
@@ -586,12 +586,12 @@ public class JPAEntityImpl implements JPAEntity
     @Override
     public void _setEntityState(EntityState newState)
     {
-        if ($$state != newState && newState != EntityState.REMOVED) {
+        if ($$state != newState && newState != EntityState.REMOVED && !_isLazyLoaded()) {
             $$metadata.getEntityFields().stream()
-                      .filter(f -> f.isEntityField() && !_isLazyLoaded(f.getName()) && f.getMappingType() != MappingType.ONE_TO_MANY)
+                      .filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
                       .forEach(f -> {
                           JPAEntity entity = (JPAEntity) f.invokeGetter(this);
-                          if (entity != null && !entity._isLazyLoaded()) {
+                          if (entity != null) {
                               entity._setEntityState(newState);
                           }//if
                       });
