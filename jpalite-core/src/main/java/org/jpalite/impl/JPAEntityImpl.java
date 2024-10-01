@@ -86,7 +86,7 @@ public class JPAEntityImpl implements JPAEntity
     /**
      * The metadata for the entity
      */
-    private final transient EntityMetaData<?> $$metadata;
+    private transient EntityMetaData<?> $$metadata;
     /**
      * Set to true if the entity is being mapped
      */
@@ -458,6 +458,13 @@ public class JPAEntityImpl implements JPAEntity
         }//if
 
         return $$metadata;
+    }
+
+    public void _setMetaData(EntityMetaData<?> metaData)
+    {
+        if ($$metadata == null) {
+            $$metadata = metaData;
+        }
     }
 
     @Override
