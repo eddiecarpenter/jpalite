@@ -582,21 +582,24 @@ public class PersistenceContextImpl implements PersistenceContext
                     case INSERT -> {
                         if (preAction) {
                             metaData.getLifecycleListeners().prePersist(entity);
-                        } else {
+                        }
+                        else {
                             metaData.getLifecycleListeners().postPersist(entity);
                         }
                     }
                     case UPDATE -> {
                         if (preAction) {
                             metaData.getLifecycleListeners().preUpdate(entity);
-                        } else {
+                        }
+                        else {
                             metaData.getLifecycleListeners().postUpdate(entity);
                         }
                     }
                     case DELETE -> {
                         if (preAction) {
                             metaData.getLifecycleListeners().preRemove(entity);
-                        } else {
+                        }
+                        else {
                             metaData.getLifecycleListeners().postRemove(entity);
                         }
                     }
@@ -774,7 +777,7 @@ public class PersistenceContextImpl implements PersistenceContext
                             if (action == PersistenceAction.DELETE) {
                                 entity._setEntityState(EntityState.REMOVED);
                                 if (entity._getMetaData().isCacheable()) {
-                                    l2Cache().evict(entity._getEntityClass(), entity._getPrimaryKey());
+                                    l2Cache().evict(entity.get$$EntityClass(), entity._getPrimaryKey());
                                 }//if
 
                                 cascadeRemove(Set.of(MappingType.MANY_TO_ONE), entity);
@@ -810,7 +813,7 @@ public class PersistenceContextImpl implements PersistenceContext
                              NOTE: This is highly unlikely and an error in itself.
                              */
                             if (entity._getMetaData().isCacheable()) {
-                                l2Cache().evict(entity._getEntityClass(), entity._getPrimaryKey());
+                                l2Cache().evict(entity.get$$EntityClass(), entity._getPrimaryKey());
                             }//if
 
                             throw new OptimisticLockException(entity);

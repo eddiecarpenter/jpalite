@@ -209,7 +209,8 @@ public class JPALiteQueryImpl<T> implements Query
     {
         if (params.isEmpty()) {
             usingNamedParameters = false;
-        } else if (usingNamedParameters) {
+        }
+        else if (usingNamedParameters) {
             throw new IllegalArgumentException(MIXING_POSITIONAL_AND_NAMED_PARAMETERS_ARE_NOT_ALLOWED);
         }//if
     }
@@ -218,7 +219,8 @@ public class JPALiteQueryImpl<T> implements Query
     {
         if (params.isEmpty()) {
             usingNamedParameters = true;
-        } else if (!usingNamedParameters) {
+        }
+        else if (!usingNamedParameters) {
             throw new IllegalArgumentException(MIXING_POSITIONAL_AND_NAMED_PARAMETERS_ARE_NOT_ALLOWED);
         }//if
     }
@@ -299,7 +301,7 @@ public class JPALiteQueryImpl<T> implements Query
                 }//else
 
                 //Check if the entity is not already in L1 Cache
-                JPAEntity l1Entity = (JPAEntity) persistenceContext.l1Cache().find(entity._getEntityClass(), entity._getPrimaryKey());
+                JPAEntity l1Entity = (JPAEntity) persistenceContext.l1Cache().find(entity.get$$EntityClass(), entity._getPrimaryKey());
                 if (l1Entity == null) {
                     persistenceContext.l1Cache().manage(entity);
                 }//if
@@ -321,7 +323,8 @@ public class JPALiteQueryImpl<T> implements Query
             if (parameter.getValue() != null) {
                 if (parameter.getValue().getClass().isAssignableFrom(Boolean.class)) {
                     statement.setObject(parameter.getPosition(), Boolean.TRUE.equals(parameter.getValue()) ? 1 : 0, Types.OTHER);
-                } else {
+                }
+                else {
                     if (parameter.getParameterType().equals(Object.class)) {
                         statement.setObject(parameter.getPosition(), parameter.getValue(), Types.OTHER);
                     }//if
@@ -473,7 +476,8 @@ public class JPALiteQueryImpl<T> implements Query
                     ) {
                         if (cacheStoreMode == CacheStoreMode.USE) {
                             persistenceContext.l2Cache().add(jpaEntity);
-                        } else {
+                        }
+                        else {
                             persistenceContext.l2Cache().replace(jpaEntity);
                         }
                     }//if
@@ -579,7 +583,8 @@ public class JPALiteQueryImpl<T> implements Query
                         if (jpaEntity._getMetaData().isCacheable() && cacheStoreMode != CacheStoreMode.BYPASS) {
                             if (cacheStoreMode == CacheStoreMode.USE) {
                                 persistenceContext.l2Cache().add(jpaEntity);
-                            } else {
+                            }
+                            else {
                                 persistenceContext.l2Cache().replace(jpaEntity);
                             }
                         }//if
@@ -678,18 +683,22 @@ public class JPALiteQueryImpl<T> implements Query
             case PERSISTENCE_QUERY_TIMEOUT -> {
                 if (value instanceof Long aLong) {
                     queryTimeout = aLong.intValue();
-                } else if (value instanceof Integer anInteger) {
+                }
+                else if (value instanceof Integer anInteger) {
                     queryTimeout = anInteger;
-                } else if (value instanceof String aString) {
+                }
+                else if (value instanceof String aString) {
                     queryTimeout = Integer.parseInt(aString);
                 }
             }
             case PERSISTENCE_LOCK_TIMEOUT -> {
                 if (value instanceof Long aLong) {
                     lockTimeout = aLong.intValue();
-                } else if (value instanceof Integer anInteger) {
+                }
+                else if (value instanceof Integer anInteger) {
                     lockTimeout = anInteger;
-                } else if (value instanceof String aString) {
+                }
+                else if (value instanceof String aString) {
                     lockTimeout = Integer.parseInt(aString);
                 }
             }

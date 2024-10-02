@@ -44,7 +44,8 @@ public interface JPAEntity extends Serializable
      *
      * @return The Class
      */
-    Class<?> _getEntityClass();
+    Class<?> get$$EntityClass();
+    
 
     /**
      * Return a set of all the modified fields

@@ -127,7 +127,7 @@ public class JPAEntityImpl implements JPAEntity
     }//JPAEntityImpl
 
     @Override
-    public Class<?> _getEntityClass()
+    public Class<?> get$$EntityClass()
     {
         return getClass();
     }
@@ -458,13 +458,6 @@ public class JPAEntityImpl implements JPAEntity
         }//if
 
         return $$metadata;
-    }
-
-    public void _setMetaData(EntityMetaData<?> metaData)
-    {
-        if ($$metadata == null) {
-            $$metadata = metaData;
-        }
     }
 
     @Override
