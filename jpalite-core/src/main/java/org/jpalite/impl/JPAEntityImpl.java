@@ -113,7 +113,7 @@ public class JPAEntityImpl implements JPAEntity
             //Find all fields that are flagged as being lazily fetched and add them to our $$fetchLazy list
             $$metadata.getEntityFields()
                       .stream()
-                      .filter(f -> f.getFetchType() == FetchType.LAZY)
+                      .filter(f -> f.getFetchType() == FetchType.LAZY && f.getMappingType() != MappingType.MANY_TO_ONE && f.getMappingType() != MappingType.MANY_TO_MANY)
                       .forEach(f -> $$fetchLazy.add(f.getName()));
 
             //Force the default lock mode to OPTIMISTIC_FORCE_INCREMENT if the entity has a version field
@@ -381,12 +381,12 @@ public class JPAEntityImpl implements JPAEntity
         lazyFields.forEach(this::_lazyFetch);
         _getMetaData().getEntityFields()
                       .stream()
-                      .filter(f -> f.getMappingType().equals(MappingType.MANY_TO_ONE) && (forceEagerLoad || f.getFetchType() == FetchType.EAGER))
+                      .filter(f -> forceEagerLoad || f.getFetchType() == FetchType.EAGER)
                       .forEach(f -> {
-                          JPAEntity manyToOneField = (JPAEntity) f.invokeGetter(this);
-                          if (manyToOneField != null) {
-                              _getPersistenceContext().l1Cache().manage(manyToOneField);
-                              manyToOneField._refreshEntity(Collections.emptyMap());
+                          JPAEntity entity = (JPAEntity) f.invokeGetter(this);
+                          if (entity != null) {
+                              _getPersistenceContext().l1Cache().manage(entity);
+                              entity._refreshEntity(Collections.emptyMap());
                           }//if
                       });
     }//_lazyFetchAll
