@@ -817,7 +817,7 @@ public class JPQLParser extends JPQLAdaptor implements QueryParser
                     EntityInfo foundInfo = entityInfo;
                     entityInfo = findJoins(path, entityInfo, context);
                     EntityField entityField = entityInfo.getMetadata().getEntityField(field);
-                    if (entityField.isEntityField()) {
+                    if (entityField.isRelationshipField()) {
                         entityInfo = findJoins(tableColumn.getFullyQualifiedName(), foundInfo, context);
                         tableColumn.setColumnName(entityInfo.getMetadata().getIdField().getName());
                     }
@@ -927,7 +927,7 @@ public class JPQLParser extends JPQLAdaptor implements QueryParser
         String pathElement = pathElements[0];
         for (int i = 1; i < pathElements.length; i++) {
             EntityField field = entityInfo.getMetadata().getEntityField(pathElements[i]);
-            if (!field.isEntityField()) {
+            if (!field.isRelationshipField()) {
                 break;
             }//if
 

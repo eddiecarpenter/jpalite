@@ -381,7 +381,7 @@ public class JPAEntityImpl implements JPAEntity
         lazyFields.forEach(this::_lazyFetch);
         _getMetaData().getEntityFields()
                       .stream()
-                      .filter(f -> forceEagerLoad || f.getFetchType() == FetchType.EAGER)
+                      .filter(f -> f.isRelationshipField() && (forceEagerLoad || f.getFetchType() == FetchType.EAGER))
                       .forEach(f -> {
                           JPAEntity entity = (JPAEntity) f.invokeGetter(this);
                           if (entity != null) {
@@ -588,7 +588,7 @@ public class JPAEntityImpl implements JPAEntity
     {
         if ($$state != newState && newState != EntityState.REMOVED && !_isLazyLoaded()) {
             $$metadata.getEntityFields().stream()
-                      .filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
+                      .filter(f -> f.isRelationshipField() && f.getMappingType() != MappingType.ONE_TO_MANY)
                       .forEach(f -> {
                           JPAEntity entity = (JPAEntity) f.invokeGetter(this);
                           if (entity != null) {
@@ -611,7 +611,7 @@ public class JPAEntityImpl implements JPAEntity
         if ($$persistenceContext != persistenceContext) {
             $$persistenceContext = persistenceContext;
             $$metadata.getEntityFields().stream()
-                      .filter(f -> f.isEntityField() && f.getMappingType() != MappingType.ONE_TO_MANY)
+                      .filter(f -> f.isRelationshipField() && f.getMappingType() != MappingType.ONE_TO_MANY)
                       .forEach(f -> {
                           JPAEntity vEntity = (JPAEntity) f.invokeGetter(this);
                           if (vEntity != null) {
@@ -644,7 +644,7 @@ public class JPAEntityImpl implements JPAEntity
             return null;
         }//if
 
-        if (entityField.isEntityField()) {
+        if (entityField.isRelationshipField()) {
             return (X) value;
         }
 
@@ -790,7 +790,7 @@ public class JPAEntityImpl implements JPAEntity
     {
         try {
             $$mapping = true;
-            if (field.isEntityField()) {
+            if (field.isRelationshipField()) {
                 if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
                     field.invokeSetter(this, _JPAReadEntity(field, row, colPrefix, columnNr));
                 }//if
@@ -854,7 +854,7 @@ public class JPAEntityImpl implements JPAEntity
             Object value = field.invokeGetter(this);
             if (value != null) {
                 out.writeShort(field.getFieldNr());
-                if (field.isEntityField()) {
+                if (field.isRelationshipField()) {
                     EntityMetaData<?> metaData = ((JPAEntity) value)._getMetaData();
                     if (metaData.getEntityType() == EntityType.EMBEDDABLE) {
                         ((JPAEntityImpl) value).writeFields(out);
@@ -888,7 +888,7 @@ public class JPAEntityImpl implements JPAEntity
         while (fieldNr > 0) {
             EntityField field = $$metadata.getEntityFieldByNr(fieldNr);
 
-            if (field.isEntityField()) {
+            if (field.isRelationshipField()) {
                 EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
 
                 JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();
@@ -918,7 +918,7 @@ public class JPAEntityImpl implements JPAEntity
         for (EntityField field : fieldList) {
             Object value = field.invokeGetter(this);
             if (!field.isNullable() || value != null) {
-                if (field.isEntityField()) {
+                if (field.isRelationshipField()) {
                     if (field.getMappingType() == MappingType.ONE_TO_ONE || field.getMappingType() == MappingType.MANY_TO_ONE || field.getMappingType() == MappingType.EMBEDDED) {
                         jsonGenerator.writeFieldName(field.getName());
                         if (value == null) {
@@ -993,7 +993,7 @@ public class JPAEntityImpl implements JPAEntity
                 field.invokeSetter(this, null);
             }
             else {
-                if (field.isEntityField()) {
+                if (field.isRelationshipField()) {
                     EntityMetaData<?> metaData = EntityMetaDataManager.getMetaData(field.getType());
 
                     JPAEntityImpl entity = (JPAEntityImpl) metaData.getNewEntity();

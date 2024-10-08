@@ -65,7 +65,7 @@ public class EntityFieldImpl implements EntityField
     /**
      * Set to true if the field points to an entity
      */
-    private boolean entityField;
+    private boolean relationshipField;
     /**
      * The SQL column linked to the field
      */
@@ -153,23 +153,23 @@ public class EntityFieldImpl implements EntityField
             type = (Class<?>) ((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0];
         }//if
 
-        enityClass       = enitityClass;
-        name             = field.getName();
-        column           = entityMetaData.isLegacyEntity() ? null : field.getName();
-        this.fieldNr     = fieldNr;
-        entityField      = (JPAEntity.class.isAssignableFrom(type));
-        mappingType      = MappingType.BASIC;
-        unique           = false;
-        nullable         = true;
-        insertable       = true;
-        updatable        = true;
-        fetchType        = FetchType.EAGER;
-        cascade          = new HashSet<>();
-        mappedBy         = null;
-        columnDefinition = "";
-        table            = "";
-        idField          = false;
-        versionField     = false;
+        enityClass        = enitityClass;
+        name              = field.getName();
+        column            = entityMetaData.isLegacyEntity() ? null : field.getName();
+        this.fieldNr      = fieldNr;
+        relationshipField = (JPAEntity.class.isAssignableFrom(type));
+        mappingType       = MappingType.BASIC;
+        unique            = false;
+        nullable          = true;
+        insertable        = true;
+        updatable         = true;
+        fetchType         = FetchType.EAGER;
+        cascade           = new HashSet<>();
+        mappedBy          = null;
+        columnDefinition  = "";
+        table             = "";
+        idField           = false;
+        versionField      = false;
 
         //The order below is important
         processMappingType(field);
@@ -237,7 +237,7 @@ public class EntityFieldImpl implements EntityField
     {
         Basic basic = field.getAnnotation(Basic.class);
         if (basic != null) {
-            if (isEntityField()) {
+            if (isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is referencing an Entity type and cannot be annotated with @Basic.");
             }//if
             setFetchType(basic.fetch());
@@ -275,7 +275,7 @@ public class EntityFieldImpl implements EntityField
     {
         Embedded embedded = field.getAnnotation(Embedded.class);
         if (embedded != null) {
-            if (!isEntityField()) {
+            if (!isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @Embedded.");
             }//if
 
@@ -289,7 +289,7 @@ public class EntityFieldImpl implements EntityField
     {
         OneToOne oneToOne = field.getAnnotation(OneToOne.class);
         if (oneToOne != null) {
-            if (!isEntityField()) {
+            if (!isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @OneToOne.");
             }//if
             setMappingType(MappingType.ONE_TO_ONE);
@@ -305,7 +305,7 @@ public class EntityFieldImpl implements EntityField
     {
         OneToMany oneToMany = field.getAnnotation(OneToMany.class);
         if (oneToMany != null) {
-            if (!isEntityField()) {
+            if (!isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @OneToMany.");
             }//if
 
@@ -322,7 +322,7 @@ public class EntityFieldImpl implements EntityField
     {
         ManyToOne manyToOne = field.getAnnotation(ManyToOne.class);
         if (manyToOne != null) {
-            if (!isEntityField()) {
+            if (!isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @ManyToOne.");
             }//if
 
@@ -338,7 +338,7 @@ public class EntityFieldImpl implements EntityField
     {
         ManyToMany manyToMany = field.getAnnotation(ManyToMany.class);
         if (manyToMany != null) {
-            if (!isEntityField()) {
+            if (!isRelationshipField()) {
                 throw new PersistenceException(enityClass.getName() + "::" + getName() + " is NOT referencing an Entity type and cannot NOT be annotated with @ManyToMany.");
             }//if
 
@@ -385,7 +385,7 @@ public class EntityFieldImpl implements EntityField
                     converter = new EnumFieldType((Class<Enum<?>>) type);
                 }//if
                 else {
-                    if (isEntityField()) {
+                    if (isRelationshipField()) {
                         throw new PersistenceException(enityClass.getName() + "::" + getName() + " is referencing an Entity type and cannot be annotated with @Enumerated.");
                     }//if
 
@@ -393,7 +393,7 @@ public class EntityFieldImpl implements EntityField
                 }//if
             }
             else {
-                if (!isEntityField()) {
+                if (!isRelationshipField()) {
                     converter = new ObjectFieldType();
                 }
             }
