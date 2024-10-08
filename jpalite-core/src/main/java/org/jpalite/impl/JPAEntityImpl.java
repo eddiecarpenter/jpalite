@@ -383,11 +383,14 @@ public class JPAEntityImpl implements JPAEntity
                       .stream()
                       .filter(f -> f.isRelationshipField() && (forceEagerLoad || f.getFetchType() == FetchType.EAGER))
                       .forEach(f -> {
-                          JPAEntity entity = (JPAEntity) f.invokeGetter(this);
-                          if (entity != null) {
+                          Object field = f.invokeGetter(this);
+                          if (field instanceof JPAEntity entity) {
                               _getPersistenceContext().l1Cache().manage(entity);
                               entity._refreshEntity(Collections.emptyMap());
-                          }//if
+                          }
+                          else {
+                              throw new PersistenceException("Field " + f.getName() + " is not a relationship field and has a value of " + field.toString());
+                          }
                       });
     }//_lazyFetchAll
 
