@@ -36,6 +36,7 @@ jobs:
       - name: Install OpenVPN
         run: |
           sudo mkdir -p /etc/apt/keyrings
+          sudo chmod 755 /etc/apt/keyrings
           sudo ls -la /etc/apt/keyrings
           sudo curl -sSfL https://packages.openvpn.net/packages-repo.gpg >/etc/apt/keyrings/openvpn.asc
           sudo echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main" >>/etc/apt/sources.list.d/openvpn3.list
