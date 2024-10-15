@@ -45,7 +45,7 @@ jobs:
           username: ${{ secrets.OVPN_USERNAME }}
           password: ${{ secrets.OVPN_PASSWORD }}
           client_key: ${{ secrets.OVPN_CLIENT_KEY }}
-          tls_auth_key: ${{ secrets.OVPN_TLS_AUTH_KEY }}
+          tls_crypt_v2_key: ${{ secrets.OVPN_TLS_AUTH_KEY }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4.2.2
