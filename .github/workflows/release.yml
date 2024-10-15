@@ -33,18 +33,10 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Change my MAC address
-        run: |
-          sudo ip address
-          sudo ip link set dev eth0 down
-          sudo ip link set dev eth0 address 5c:e9:1e:af:29:4f
-          sudo ip link set dev eth0 up
-          sudo ip address
-
       - name: Install OpenVPN
         run: |
           sudo apt update
-          sudo apt install -y openvpn openvpn-systemd-resolved
+          sudo apt install -y openvpn3
 
       - name: Connect to VPN
         uses: "eddiecarpenter/github-openvpn-connect-action@v3"
