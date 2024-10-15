@@ -39,11 +39,8 @@ jobs:
           sudo chmod 755 /etc/apt/sources.list.d
           sudo curl -sSfL https://packages.openvpn.net/packages-repo.gpg > /tmp/openvpn.asc
           sudo cp /tmp/openvpn.asc /etc/apt/keyrings/
-          sudo ls -la /etc/apt/sources.list.d/
           sudo echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main" >> /tmp/openvpn3.list
           sudo cp /tmp/openvpn3.list /etc/apt/sources.list.d/
-          sudo ls -la /etc/apt/sources.list.d/
-          sudo ls -la /tmp
           sudo apt-get update -y 
           sudo apt-get install -y openvpn3
 
@@ -51,6 +48,7 @@ jobs:
         uses: "eddiecarpenter/github-openvpn-connect-action@v3"
         with:
           echo_config: true
+          use_openvpn3: true
           config_file: .github/workflows/client.ovpn
           username: ${{ secrets.OVPN_USERNAME }}
           password: ${{ secrets.OVPN_PASSWORD }}
