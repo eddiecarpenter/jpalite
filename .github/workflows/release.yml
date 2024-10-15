@@ -35,8 +35,6 @@ jobs:
 
       - name: Install OpenVPN
         run: |
-          sudo mkdir -p /etc/apt/keyrings
-          sudo curl -sSfL https://packages.openvpn.net/packages-repo.gpg >/etc/apt/keyrings/openvpn.asc
           sudo apt update
           sudo apt install -y openvpn3
 
