@@ -41,9 +41,10 @@ jobs:
       - name: Change my MAC address
         run: |
           sudo ip address
-      #          sudo ip link set dev wlp3s0 down
-      #          sudo ip link set dev wlp3s0 address xx:xx:xx:xx:xx:xx
-      #          sudo ip link set dev wlp3s0 up
+          sudo ip link set dev eth0 down
+          sudo ip link set dev eth0 address 5c:e9:1e:af:29:4f
+          sudo ip link set dev eth0 up
+          sudo ip address
 
       - name: Connect to VPN
         uses: "eddiecarpenter/github-openvpn-connect-action@v3"
