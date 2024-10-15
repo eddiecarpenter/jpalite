@@ -39,10 +39,12 @@ jobs:
           sudo chmod 755 /etc/apt/keyrings
           sudo chmod 755 /etc/apt/sources.list.d
           sudo curl -sSfL https://packages.openvpn.net/packages-repo.gpg > openvpn.asc
-          sudo cp openvpn.asc /etc/apt/keyrings/openvpn.asc
-          sudo echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main" >> openvpn3.list
-          sudo echo cp openvpn3.list /etc/apt/sources.list.d/openvpn3.list
+          sudo cp openvpn.asc /etc/apt/keyrings/
           sudo ls -la /etc/apt/sources.list.d/
+          sudo echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian noble main" >> openvpn3.list
+          sudo echo cp openvpn3.list /etc/apt/sources.list.d/
+          sudo ls -la /etc/apt/sources.list.d/
+          sudo ls -la 
           sudo apt-get update -y 
           sudo apt-get install -y openvpn3
 
