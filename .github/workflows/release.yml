@@ -1,6 +1,7 @@
 name: JPALite Release
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [ closed ]
     paths:
@@ -36,6 +37,13 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y openvpn openvpn-systemd-resolved
+
+      - name: Change my MAC address
+        run: |
+          sudo ip address
+      #          sudo ip link set dev wlp3s0 down
+      #          sudo ip link set dev wlp3s0 address xx:xx:xx:xx:xx:xx
+      #          sudo ip link set dev wlp3s0 up
 
       - name: Connect to VPN
         uses: "eddiecarpenter/github-openvpn-connect-action@v3"
