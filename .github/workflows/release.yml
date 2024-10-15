@@ -5,6 +5,7 @@ on:
     types: [ closed ]
     paths:
       - '.github/project.yml'
+      - '.github/workflows/client.ovpn'
       - '.github/workflows/release.yml'
 
 concurrency:
